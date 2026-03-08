@@ -1,31 +1,28 @@
-import {
-  DarkTheme,
-  DefaultTheme,
-  ThemeProvider,
-} from "@react-navigation/native";
-import { Stack } from "expo-router";
-import { StatusBar } from "expo-status-bar";
-import "react-native-reanimated";
-
-import { useColorScheme } from "@/hooks/use-color-scheme";
-
-export const unstable_settings = {
-  anchor: "(tabs)",
-};
+import { Stack } from 'expo-router';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  // 💡 복잡한 useEffect, useState, Supabase 검사 로직을 다 뺐습니다.
+  // 일단 화면부터 띄우고 봅시다!
 
   return (
-    <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
+    <SafeAreaProvider>
       <Stack>
+        {/* 메인 탭 화면 */}
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+
+        {/* 로그인 화면 */}
+        <Stack.Screen name="login" options={{ headerShown: false }} />
+
+        {/* 학교 인증 화면 */}
         <Stack.Screen
-          name="modal"
-          options={{ presentation: "modal", title: "Modal" }}
+          name="school-auth"
+          options={{ title: '학교 인증', headerBackTitle: '뒤로' }}
         />
+
+        {/* index는 이제 무조건 (tabs)로 보내주는 역할만 합니다 */}
+        <Stack.Screen name="index" options={{ headerShown: false }} />
       </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
