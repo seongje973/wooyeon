@@ -2,12 +2,12 @@
 
 export const Colors = {
   // 메인 브랜딩 컬러 (우연 핑크)
-  primary: "#FF6B6B",
-  primaryLight: "#FF8787",
-  primaryDark: "#FA5252",
+  primary: "#826AED",
+  primaryLight: "#9480EF",
+  primaryDark: "#765CEB",
 
   // 포인트 및 보조 컬러
-  secondary: "#FFD93D", // 노란색 포인트 (알림, 별점 등)
+  secondary: "#C879FF", // 보라색 포인트 (알림, 별점 등)
   accent: "#4DABF7", // 파란색 (남성 유저 또는 확인 버튼)
   love: "#F783AC", // 핑크색 (하트, 매칭 관련)
 
