@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { styles } from './HomeScreen.styles'; // 👈 분리한 스타일 불러오기
+import { styles } from './HomeScreen.styles';
 
 export default function HomeScreen() {
   return (

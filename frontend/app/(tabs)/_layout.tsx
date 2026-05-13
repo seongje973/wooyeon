@@ -5,13 +5,8 @@ export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
-        headerShown: false, // 상단 헤더 숨기기
-        tabBarActiveTintColor: '#ff7f00', // 선택됐을 때 (주황색)
-        tabBarInactiveTintColor: '#999', // 선택 안 됐을 때 (회색)
-        tabBarStyle: {
-          height: 60,
-          paddingBottom: 10,
-        },
+        headerShown: true,
+        tabBarActiveTintColor: '#826AED', // 선택됐을 때
       }}
     >
       {/* 1. 메인 홈 */}
@@ -29,7 +24,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name="match"
         options={{
-          title: '뽑기',
+          title: '매칭',
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'heart' : 'heart-outline'} size={24} color={color} />
           ),
