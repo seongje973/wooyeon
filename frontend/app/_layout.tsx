@@ -1,24 +1,50 @@
 import { useEffect, useState } from 'react';
-import { Stack, useRouter, useSegments } from 'expo-router';
+import { Stack, useRouter, useSegments, useRootNavigationState } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { supabase } from '@/lib/supabase';
 
 export default function RootLayout() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const router = useRouter();
+  const rootNavigationState = useRootNavigationState();
   const segments = useSegments();
 
   useEffect(() => {
-    // 라우팅이 준비되었을 때 로그인 상태에 따라 리다이렉트 처리
-    const inAuthGroup = segments[0] === '(auth)';
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('초기 세션 확인:', !!session);
+      setIsAuthenticated(!!session);
+    };
 
-    if (!isAuthenticated && !inAuthGroup) {
-      // 로그인 안 했는데 인증 화면이 아니면 -> 로그인 화면으로 쫓아냄
-      router.replace('/(auth)/login');
-    } else if (isAuthenticated && inAuthGroup) {
-      // 로그인 했는데 인증 화면에 있으면 -> 메인 탭으로 보냄
-      router.replace('/(tabs)');
-    }
-  }, [isAuthenticated, segments]);
+    checkSession();
+
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('인증 이벤트 발생:', event, '세션 존재:', !!session);
+      setIsAuthenticated(!!session);
+    });
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+
+  useEffect(() => {
+    if(!rootNavigationState?.key || isAuthenticated === null) return;
+    const inAuthGroup = segments[0] === '(auth)';
+    console.log('현재 세그먼트:', segments);
+    console.log('인증상태:', isAuthenticated, '인증그룹여부:', inAuthGroup);
+    const routingTimer = setTimeout(() => {
+      if (!isAuthenticated && !inAuthGroup) {
+        console.log('👉 로그인 화면으로 이동');
+        router.replace('/(auth)/login' as any);
+      } else if (isAuthenticated && inAuthGroup) {
+        console.log('🚀 메인 탭으로 이동 시도');
+        router.replace('/(tabs)' as any);
+      }
+    }, 0);
+
+    return () => clearTimeout(routingTimer);
+  }, [isAuthenticated, segments, rootNavigationState?.key]);
 
   return (
     <SafeAreaProvider>

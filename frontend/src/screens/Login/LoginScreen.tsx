@@ -1,38 +1,27 @@
 import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/Colors';
 import SocialButton from '@/components/SocialButton';
 import { supabase } from '@/lib/supabase';
-import * as Linking from 'expo-linking';
+import * as WebBrowser from 'expo-web-browser';
+import { makeRedirectUri } from 'expo-auth-session';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const LoginScreen = () => {
-  const router = useRouter();
-
-  useEffect(() => {
-    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session) {
-        console.log('✅ 로그인 감지됨! 메인으로 이동합니다.');
-        router.replace('/(tabs)');
-      }
-    });
-    return () => {
-      authListener.subscription.unsubscribe();
-    };
-  }, []);
 
   const handleSocialLogin = async (type: 'kakao' | 'google') => {
     console.log(`${type} 로그인 시도...`);
 
     try {
+      const redirectUrl = makeRedirectUri();
+      console.log('생성된 리다이렉트 주소:', redirectUrl);
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: type,
         options: {
-          redirectTo: Linking.createURL('/'),
-          queryParams: {
-            scope: 'profile_nickname,profile_image',
-          },
+          redirectTo: redirectUrl,
         },
       });
 
@@ -40,7 +29,14 @@ const LoginScreen = () => {
 
       if (data.url) {
         console.log('로그인 창 열기:', data.url);
-        await Linking.openURL(data.url);
+        const result = await WebBrowser.openAuthSessionAsync(data.url, redirectUrl);
+
+        if (result.type === 'success') {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+             console.log('로그인 성공! 레이아웃이 화면을 전환합니다.');
+          }
+        }
       }
     } catch (err) {
       console.error(err);
