@@ -10,10 +10,15 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import CommonInput from "@/components/CommonInput";
 import CommonButton from "@/components/CommonButton";
 import { styles } from "./SchoolAuthScreen.styles";
+import { findNearbyUniversities, findUniversityByEmail } from '@/lib/university';
+
+const NEARBY_RADIUS_KM = 10;
 
 const SchoolAuthScreen = () => {
   const [email, setEmail] = useState("");
-  const isValidEmail = email.endsWith(".ac.kr");
+  const university = findUniversityByEmail(email);
+  const isValidEmail = university !== undefined;
+  const nearbyCount = university ? findNearbyUniversities(university, NEARBY_RADIUS_KM).length : 0;
 
   const handleVerify = () => {
     Alert.alert("인증 메일 발송", `${email}로 인증 메일을 보냈습니다.`);
@@ -42,6 +47,14 @@ const SchoolAuthScreen = () => {
             keyboardType="email-address"
             autoCapitalize="none"
           />
+          {university && (
+            <Text style={styles.schoolInfo}>
+              {`${university.name} · 주변 ${NEARBY_RADIUS_KM}km 안 학교 ${nearbyCount}곳과도 만날 수 있어요`}
+            </Text>
+          )}
+          {!university && email.includes('@') && (
+            <Text style={styles.schoolError}>아직 지원하지 않는 학교 이메일이에요.</Text>
+          )}
         </View>
 
         <View style={styles.footer}>
