@@ -77,7 +77,7 @@ export class VerificationService {
   async verify(userId: string, code: string) {
     const { data: row, error } = await supabase
       .from('school_verifications')
-      .select('email, university_id, code_hash, attempts, expires_at, verified_at')
+      .select('email, university_id, code_hash, attempts, sent_at, expires_at, verified_at')
       .eq('user_id', userId)
       .maybeSingle();
     if (error) throw error;
@@ -93,11 +93,12 @@ export class VerificationService {
 
     // 비교하기 전에 시도 한 번을 먼저 기록한다. 읽은 attempts 값이 그대로일 때만 올라가서,
     // 동시에 여러 번 보내도 MAX_ATTEMPTS번보다 많이 비교하지 않는다.
+    // 인증번호마다 sent_at이 달라서 이것으로 같은 인증번호인지 가린다 (번호가 우연히 같아도 구분된다).
     const { data: claimed, error: claimError } = await supabase
       .from('school_verifications')
       .update({ attempts: row.attempts + 1 })
       .eq('user_id', userId)
-      .eq('code_hash', row.code_hash)
+      .eq('sent_at', row.sent_at)
       .eq('attempts', row.attempts)
       .select('user_id');
     if (claimError) throw claimError;
@@ -112,14 +113,16 @@ export class VerificationService {
       .from('school_verifications')
       .update({ verified_at: new Date().toISOString(), code_hash: null })
       .eq('user_id', userId)
-      .eq('code_hash', row.code_hash)
+      .eq('sent_at', row.sent_at)
+      .gt('expires_at', new Date().toISOString())
+      .is('verified_at', null)
       .select('user_id');
     // 같은 이메일을 다른 계정이 먼저 인증하면 unique 인덱스에서 막힌다.
     if (verifyError?.code === '23505') {
       throw new ConflictException('이미 다른 계정에서 인증한 이메일입니다.');
     }
     if (verifyError) throw verifyError;
-    if (!verified?.length) throw new BadRequestException('인증번호가 바뀌었습니다. 새 인증번호를 입력해 주세요.');
+    if (!verified?.length) throw new BadRequestException('인증번호가 바뀌었거나 만료됐습니다. 다시 받아 주세요.');
     return { universityId: row.university_id, email: row.email };
   }
 }
