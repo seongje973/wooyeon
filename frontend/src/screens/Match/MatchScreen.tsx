@@ -26,7 +26,7 @@ export default function MatchScreen() {
   const [index, setIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [message, setMessage] = useState('');
-  const [matched, setMatched] = useState<Candidate | null>(null);
+  const [matched, setMatched] = useState<{ candidate: Candidate; matchId: string } | null>(null);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
@@ -54,7 +54,7 @@ export default function MatchScreen() {
     matchingApi
       .swipe(current.userId, decision === 'like')
       .then((result) => {
-        if (result.matched) setMatched(current);
+        if (result.matchId) setMatched({ candidate: current, matchId: result.matchId });
       })
       .catch((err) => {
         // 다른 기기에서 이미 고른 상대(409)는 넘어간 것으로 본다.
@@ -108,12 +108,12 @@ export default function MatchScreen() {
   const matchNotice = matched && (
     <View style={styles.matchOverlay}>
       <Text style={styles.matchTitle}>서로 좋아요!</Text>
-      <Text style={styles.matchText}>{matched.nickname}님과 연결됐어요. 먼저 인사해 보세요.</Text>
+      <Text style={styles.matchText}>{matched.candidate.nickname}님과 연결됐어요. 먼저 인사해 보세요.</Text>
       <TouchableOpacity
         style={styles.matchButton}
         onPress={() => {
           setMatched(null);
-          router.push('/chat');
+          router.push({ pathname: '/chat/[id]', params: { id: matched.matchId, name: matched.candidate.nickname, userId: matched.candidate.userId } });
         }}
       >
         <Text style={styles.matchButtonText}>채팅하러 가기</Text>

@@ -70,6 +70,8 @@ export default function RootLayout() {
         <Stack.Screen name="profile-edit" options={{ title: '프로필', headerBackTitle: '뒤로' }} />
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="chat/[id]" options={{ presentation: 'card' }} />
+        <Stack.Screen name="party/[id]" options={{ title: '파티', headerBackTitle: '뒤로' }} />
+        <Stack.Screen name="party-new" options={{ title: '파티 열기', headerBackTitle: '뒤로' }} />
       </Stack>
     </SafeAreaProvider>
   );

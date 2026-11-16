@@ -1,4 +1,5 @@
 import { StyleSheet } from 'react-native';
+import { Colors } from '@/constants/Colors';
 
 export const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f4f4f4' },
@@ -50,4 +51,17 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
   },
   logoutText: { color: '#ff4444', fontWeight: 'bold', fontSize: 16 },
+
+  // 회원 탈퇴
+  deleteArea: { alignItems: 'center', marginTop: 24, marginHorizontal: 20 },
+  deleteLink: { fontSize: 14, color: Colors.gray600, textDecorationLine: 'underline', padding: 8 },
+  deleteNotice: { fontSize: 14, color: Colors.gray800, textAlign: 'center', marginBottom: 12 },
+  deleteButton: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    padding: 15,
+    borderRadius: 10,
+    backgroundColor: Colors.error,
+  },
+  deleteButtonText: { color: Colors.white, fontWeight: 'bold', fontSize: 16 },
 });
