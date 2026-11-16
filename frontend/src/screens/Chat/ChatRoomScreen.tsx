@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
 import { supabase } from '@/lib/supabase';
 import { Message, chatApi } from '@/api/chat';
+import { matchingApi } from '@/api/matching';
 import { safetyApi } from '@/api/safety';
 import { styles } from './ChatRoomScreen.styles';
 
@@ -85,7 +86,13 @@ export default function ChatRoomScreen() {
         }}
       />
       {menuOpen && userId && (
-        <SafetyPanel userId={userId} name={name ?? '상대'} onBlocked={() => router.back()} onClose={() => setMenuOpen(false)} />
+        <SafetyPanel
+          matchId={id}
+          userId={userId}
+          name={name ?? '상대'}
+          onLeave={() => router.back()}
+          onClose={() => setMenuOpen(false)}
+        />
       )}
       <KeyboardAvoidingView
         style={styles.container}
@@ -129,17 +136,19 @@ export default function ChatRoomScreen() {
 
 // 웹에서는 Alert가 뜨지 않아서 확인 단계도 화면 안에서 보여 준다.
 function SafetyPanel({
+  matchId,
   userId,
   name,
-  onBlocked,
+  onLeave,
   onClose,
 }: {
+  matchId: string;
   userId: string;
   name: string;
-  onBlocked: () => void;
+  onLeave: () => void;
   onClose: () => void;
 }) {
-  const [step, setStep] = useState<'menu' | 'report' | 'block'>('menu');
+  const [step, setStep] = useState<'menu' | 'report' | 'unmatch' | 'block'>('menu');
   const [reason, setReason] = useState<string | null>(null);
   const [notice, setNotice] = useState('');
 
@@ -161,6 +170,9 @@ function SafetyPanel({
         <>
           <TouchableOpacity style={styles.panelRow} onPress={() => setStep('report')}>
             <Text style={styles.panelText}>신고하기</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.panelRow} onPress={() => setStep('unmatch')}>
+            <Text style={styles.panelText}>매칭 취소</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.panelRow} onPress={() => setStep('block')}>
             <Text style={styles.panelDanger}>차단하기</Text>
@@ -186,6 +198,20 @@ function SafetyPanel({
           </TouchableOpacity>
         </>
       )}
+      {step === 'unmatch' && (
+        <>
+          <Text style={styles.panelTitle}>{name}님과의 매칭을 취소할까요?</Text>
+          <Text style={styles.panelText}>대화가 모두 지워지고, 서로 다시 추천되지 않아요.</Text>
+          <TouchableOpacity
+            style={[styles.panelButton, styles.panelButtonDanger]}
+            onPress={async () => {
+              if (await run(() => matchingApi.unmatch(matchId), '')) onLeave();
+            }}
+          >
+            <Text style={styles.panelButtonText}>매칭 취소하기</Text>
+          </TouchableOpacity>
+        </>
+      )}
       {step === 'block' && (
         <>
           <Text style={styles.panelTitle}>{name}님을 차단할까요?</Text>
@@ -193,7 +219,7 @@ function SafetyPanel({
           <TouchableOpacity
             style={[styles.panelButton, styles.panelButtonDanger]}
             onPress={async () => {
-              if (await run(() => safetyApi.block(userId), '')) onBlocked();
+              if (await run(() => safetyApi.block(userId), '')) onLeave();
             }}
           >
             <Text style={styles.panelButtonText}>차단하기</Text>
