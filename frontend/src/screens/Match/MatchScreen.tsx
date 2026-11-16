@@ -1,5 +1,6 @@
-import React, { useLayoutEffect, useState } from 'react';
-import { Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import React, { useCallback, useLayoutEffect, useState } from 'react';
+import { ActivityIndicator, Image, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   interpolate,
@@ -11,25 +12,54 @@ import Animated, {
 import { scheduleOnRN } from 'react-native-worklets';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
-import { Candidate, mockCandidates } from './mockCandidates';
+import { ApiError } from '@/api/client';
+import { Candidate, matchingApi } from '@/api/matching';
 import { styles } from './MatchScreen.styles';
 
 type Decision = 'like' | 'pass';
 
 export default function MatchScreen() {
+  const router = useRouter();
   const { width } = useWindowDimensions();
   const swipeThreshold = width * 0.25;
+  const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [index, setIndex] = useState(0);
-  const [likedIds, setLikedIds] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [message, setMessage] = useState('');
+  const [matched, setMatched] = useState<Candidate | null>(null);
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
 
-  const current = mockCandidates[index];
-  const next = mockCandidates[index + 1];
+  const current = candidates[index];
+  const next = candidates[index + 1];
+
+  // 탭에 들어올 때마다 다시 받는다. 프로필에서 만날 범위를 바꾸면 바로 반영된다.
+  const load = useCallback(() => {
+    setIsLoading(true);
+    setMessage('');
+    matchingApi
+      .candidates()
+      .then((list) => {
+        setCandidates(list);
+        setIndex(0);
+      })
+      .catch((err) => setMessage((err as Error).message))
+      .finally(() => setIsLoading(false));
+  }, []);
+  useFocusEffect(load);
 
   const decide = (decision: Decision) => {
-    if (decision === 'like' && current) setLikedIds((ids) => [...ids, current.id]);
+    if (!current) return;
     setIndex((i) => i + 1);
+    matchingApi
+      .swipe(current.userId, decision === 'like')
+      .then((result) => {
+        if (result.matched) setMatched(current);
+      })
+      .catch((err) => {
+        // 다른 기기에서 이미 고른 상대(409)는 넘어간 것으로 본다.
+        if (!(err instanceof ApiError && err.status === 409)) setMessage((err as Error).message);
+      });
   };
 
   // 다음 카드가 그려진 뒤에 위치를 되돌려야 날아간 카드가 가운데로 잠깐 돌아오지 않는다.
@@ -75,21 +105,53 @@ export default function MatchScreen() {
     opacity: interpolate(translateX.value, [-swipeThreshold, 0], [1, 0], 'clamp'),
   }));
 
+  const matchNotice = matched && (
+    <View style={styles.matchOverlay}>
+      <Text style={styles.matchTitle}>서로 좋아요!</Text>
+      <Text style={styles.matchText}>{matched.nickname}님과 연결됐어요. 먼저 인사해 보세요.</Text>
+      <TouchableOpacity
+        style={styles.matchButton}
+        onPress={() => {
+          setMatched(null);
+          router.push('/chat');
+        }}
+      >
+        <Text style={styles.matchButtonText}>채팅하러 가기</Text>
+      </TouchableOpacity>
+      <TouchableOpacity onPress={() => setMatched(null)}>
+        <Text style={styles.matchLater}>계속 둘러보기</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  if (isLoading) {
+    return (
+      <View style={styles.empty}>
+        <ActivityIndicator color={Colors.primary} />
+      </View>
+    );
+  }
+
   if (!current) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyTitle}>오늘의 인연을 모두 봤어요</Text>
-        <Text style={styles.emptyText}>좋아요 {likedIds.length}명 · 내일 새로운 사람이 찾아와요</Text>
+        <Text style={styles.emptyTitle}>{message ? '후보를 불러오지 못했어요' : '지금은 새로운 사람이 없어요'}</Text>
+        <Text style={styles.emptyText}>{message || '만날 학교 범위를 넓히거나 나중에 다시 와 주세요'}</Text>
+        <TouchableOpacity onPress={load}>
+          <Text style={styles.reload}>다시 불러오기</Text>
+        </TouchableOpacity>
+        {matchNotice}
       </View>
     );
   }
 
   return (
     <GestureHandlerRootView style={styles.container}>
+      {message !== '' && <Text style={styles.message}>{message}</Text>}
       <View style={styles.deck}>
         {next && <CandidateCard candidate={next} />}
         <GestureDetector gesture={pan}>
-          <Animated.View key={current.id} style={[styles.cardLayer, cardStyle]}>
+          <Animated.View key={current.userId} style={[styles.cardLayer, cardStyle]}>
             <CandidateCard candidate={current} />
             <Animated.Text style={[styles.stamp, styles.likeStamp, likeStyle]}>LIKE</Animated.Text>
             <Animated.Text style={[styles.stamp, styles.passStamp, passStyle]}>PASS</Animated.Text>
@@ -113,6 +175,7 @@ export default function MatchScreen() {
           <Ionicons name="heart" size={32} color={Colors.love} />
         </TouchableOpacity>
       </View>
+      {matchNotice}
     </GestureHandlerRootView>
   );
 }
@@ -121,19 +184,25 @@ function CandidateCard({ candidate }: { candidate: Candidate }) {
   return (
     <View style={styles.card}>
       <View style={styles.photo}>
-        <Ionicons name="person" size={96} color={Colors.gray400} />
+        {candidate.photoUrl ? (
+          <Image source={{ uri: candidate.photoUrl }} style={styles.photoImage} />
+        ) : (
+          <Ionicons name="person" size={96} color={Colors.gray400} />
+        )}
       </View>
       <View style={styles.info}>
         <Text style={styles.name}>
-          {candidate.name} <Text style={styles.age}>{candidate.age}</Text>
+          {candidate.nickname} <Text style={styles.age}>{candidate.age}</Text>
         </Text>
-        <Text style={styles.school}>
-          {candidate.school} · {candidate.major}
-        </Text>
+        <Text style={styles.school}>{candidate.universityName}</Text>
         <Text style={styles.distance}>
           {candidate.distanceKm === 0 ? '우리 학교' : `${candidate.distanceKm}km 떨어진 학교`}
         </Text>
-        <Text style={styles.tags}>{candidate.tags.join(' ')}</Text>
+        {candidate.bio !== '' && (
+          <Text style={styles.bio} numberOfLines={3}>
+            {candidate.bio}
+          </Text>
+        )}
       </View>
     </View>
   );
