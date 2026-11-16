@@ -1,4 +1,16 @@
-import { BadRequestException, Body, Controller, Get, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  Param,
+  ParseUUIDPipe,
+  Post,
+  Req,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthGuard, type AuthedRequest } from '../auth.guard.js';
 import { MatchingService } from './matching.service.js';
 
@@ -24,5 +36,10 @@ export class MatchingController {
   @Get('matches')
   matches(@Req() req: AuthedRequest) {
     return this.service.matches(req.userId);
+  }
+
+  @Delete('matches/:matchId')
+  unmatch(@Req() req: AuthedRequest, @Param('matchId', ParseUUIDPipe) matchId: string) {
+    return this.service.unmatch(req.userId, matchId);
   }
 }

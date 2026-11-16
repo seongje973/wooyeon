@@ -145,4 +145,17 @@ export class MatchingService {
       ];
     });
   }
+
+  // 대화도 함께 지워진다 (messages.match_id on delete cascade). 좋아요 기록은 남겨서 다시 후보로 나오지 않는다.
+  async unmatch(userId: string, matchId: string) {
+    const { data, error } = await supabase
+      .from('matches')
+      .delete()
+      .eq('id', matchId)
+      .or(`user_a.eq.${userId},user_b.eq.${userId}`)
+      .select('id');
+    if (error) throw error;
+    if (!data?.length) throw new NotFoundException('매칭을 찾을 수 없습니다.');
+    return { unmatched: true };
+  }
 }
