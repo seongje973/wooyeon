@@ -31,3 +31,6 @@ node --env-file=.env dist/main.js
 - `GET /matching/candidates` → 내 반경(내 학교 기준) 안 학교의 이성 중, 아직 고르지 않은 사람 최대 20명을 가까운 순으로. 프로필이 없으면 404.
 - `POST /matching/swipes` `{ targetUserId, liked: true|false }` → `{ matched: false }` 또는 서로 좋아요면 `{ matched: true, matchId }`. 같은 상대를 다시 고르면 409.
 - `GET /matching/matches` → 내 매칭 목록과 상대 요약, 최근 순.
+- `GET /chats` → 내 채팅방(매칭) 목록과 마지막 메시지
+- `GET /chats/:matchId/messages?after=<createdAt>` → 메시지를 오래된 순으로 최대 100개. `after`를 주면 그 뒤 것만. 매칭 당사자가 아니면 403.
+- `POST /chats/:matchId/messages` `{ body }` → 보낸 메시지. 1~1000자.
