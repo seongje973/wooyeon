@@ -1,5 +1,5 @@
 import React, { useCallback, useLayoutEffect, useState } from 'react';
-import { ActivityIndicator, Image, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
+import { ActivityIndicator, Image, Modal, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 import { Ionicons } from '@expo/vector-icons';
+import PhotoScrim from '@/components/PhotoScrim';
 import { Colors } from '@/constants/Colors';
 import { ApiError } from '@/api/client';
 import { Candidate, matchingApi } from '@/api/matching';
@@ -104,24 +105,46 @@ export default function MatchScreen() {
   const passStyle = useAnimatedStyle(() => ({
     opacity: interpolate(translateX.value, [-swipeThreshold, 0], [1, 0], 'clamp'),
   }));
+  // 뒤 카드는 살짝 작게 있다가 앞 카드를 밀수록 제 크기로 커진다.
+  const nextStyle = useAnimatedStyle(() => ({
+    transform: [
+      { scale: interpolate(Math.abs(translateX.value), [0, swipeThreshold], [0.94, 1], 'clamp') },
+    ],
+  }));
 
   const matchNotice = matched && (
-    <View style={styles.matchOverlay}>
-      <Text style={styles.matchTitle}>서로 좋아요!</Text>
-      <Text style={styles.matchText}>{matched.candidate.nickname}님과 연결됐어요. 먼저 인사해 보세요.</Text>
-      <TouchableOpacity
-        style={styles.matchButton}
-        onPress={() => {
-          setMatched(null);
-          router.push({ pathname: '/chat/[id]', params: { id: matched.matchId, name: matched.candidate.nickname, userId: matched.candidate.userId } });
-        }}
-      >
-        <Text style={styles.matchButtonText}>채팅하러 가기</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => setMatched(null)}>
-        <Text style={styles.matchLater}>계속 둘러보기</Text>
-      </TouchableOpacity>
-    </View>
+    <Modal transparent animationType="fade" onRequestClose={() => setMatched(null)}>
+      <View style={styles.matchOverlay}>
+        <View style={styles.matchPhotoWrap}>
+          {matched.candidate.photoUrl ? (
+            <Image source={{ uri: matched.candidate.photoUrl }} style={styles.matchPhoto} />
+          ) : (
+            <View style={styles.matchPhoto}>
+              <Ionicons name="person" size={72} color={Colors.gray400} />
+            </View>
+          )}
+          <View style={styles.matchHeart}>
+            <Ionicons name="heart" size={28} color={Colors.white} />
+          </View>
+        </View>
+        <Text style={styles.matchTitle}>우연이 닿았어요!</Text>
+        <Text style={styles.matchText}>
+          {matched.candidate.nickname}님도 회원님을 좋아해요.{'\n'}먼저 인사를 건네 보세요.
+        </Text>
+        <TouchableOpacity
+          style={styles.matchButton}
+          onPress={() => {
+            setMatched(null);
+            router.push({ pathname: '/chat/[id]', params: { id: matched.matchId, name: matched.candidate.nickname, userId: matched.candidate.userId } });
+          }}
+        >
+          <Text style={styles.matchButtonText}>먼저 인사하기</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setMatched(null)}>
+          <Text style={styles.matchLater}>계속 둘러보기</Text>
+        </TouchableOpacity>
+      </View>
+    </Modal>
   );
 
   if (isLoading) {
@@ -135,6 +158,9 @@ export default function MatchScreen() {
   if (!current) {
     return (
       <View style={styles.empty}>
+        <View style={styles.emptyIcon}>
+          <Ionicons name="heart-outline" size={40} color={Colors.primary} />
+        </View>
         <Text style={styles.emptyTitle}>{message ? '후보를 불러오지 못했어요' : '지금은 새로운 사람이 없어요'}</Text>
         <Text style={styles.emptyText}>{message || '만날 학교 범위를 넓히거나 나중에 다시 와 주세요'}</Text>
         <TouchableOpacity onPress={load}>
@@ -149,30 +175,34 @@ export default function MatchScreen() {
     <GestureHandlerRootView style={styles.container}>
       {message !== '' && <Text style={styles.message}>{message}</Text>}
       <View style={styles.deck}>
-        {next && <CandidateCard candidate={next} />}
+        {next && (
+          <Animated.View style={[styles.cardLayer, nextStyle]}>
+            <CandidateCard candidate={next} />
+          </Animated.View>
+        )}
         <GestureDetector gesture={pan}>
           <Animated.View key={current.userId} style={[styles.cardLayer, cardStyle]}>
             <CandidateCard candidate={current} />
-            <Animated.Text style={[styles.stamp, styles.likeStamp, likeStyle]}>LIKE</Animated.Text>
-            <Animated.Text style={[styles.stamp, styles.passStamp, passStyle]}>PASS</Animated.Text>
+            <Animated.Text style={[styles.stamp, styles.likeStamp, likeStyle]}>좋아요</Animated.Text>
+            <Animated.Text style={[styles.stamp, styles.passStamp, passStyle]}>다음에</Animated.Text>
           </Animated.View>
         </GestureDetector>
       </View>
 
       <View style={styles.actions}>
         <TouchableOpacity
-          style={styles.actionButton}
+          style={styles.passButton}
           onPress={() => flyOut('pass')}
           accessibilityLabel="넘기기"
         >
-          <Ionicons name="close" size={32} color={Colors.gray600} />
+          <Ionicons name="close" size={32} color={Colors.gray800} />
         </TouchableOpacity>
         <TouchableOpacity
-          style={styles.actionButton}
+          style={styles.likeButton}
           onPress={() => flyOut('like')}
           accessibilityLabel="좋아요"
         >
-          <Ionicons name="heart" size={32} color={Colors.love} />
+          <Ionicons name="heart" size={36} color={Colors.white} />
         </TouchableOpacity>
       </View>
       {matchNotice}
@@ -183,23 +213,29 @@ export default function MatchScreen() {
 function CandidateCard({ candidate }: { candidate: Candidate }) {
   return (
     <View style={styles.card}>
-      <View style={styles.photo}>
-        {candidate.photoUrl ? (
-          <Image source={{ uri: candidate.photoUrl }} style={styles.photoImage} />
-        ) : (
+      {candidate.photoUrl ? (
+        <Image source={{ uri: candidate.photoUrl }} style={styles.photoImage} />
+      ) : (
+        <View style={styles.photoEmpty}>
           <Ionicons name="person" size={96} color={Colors.gray400} />
-        )}
-      </View>
+        </View>
+      )}
+      <PhotoScrim />
       <View style={styles.info}>
         <Text style={styles.name}>
           {candidate.nickname} <Text style={styles.age}>{candidate.age}</Text>
         </Text>
-        <Text style={styles.school}>{candidate.universityName}</Text>
-        <Text style={styles.distance}>
-          {candidate.distanceKm === 0 ? '우리 학교' : `${candidate.distanceKm}km 떨어진 학교`}
-        </Text>
+        <View style={styles.metaRow}>
+          <Ionicons name="school" size={15} color={Colors.white} />
+          <Text style={styles.school}>{candidate.universityName}</Text>
+          <View style={styles.chip}>
+            <Text style={styles.chipText}>
+              {candidate.distanceKm === 0 ? '우리 학교' : `${candidate.distanceKm}km`}
+            </Text>
+          </View>
+        </View>
         {candidate.bio !== '' && (
-          <Text style={styles.bio} numberOfLines={3}>
+          <Text style={styles.bio} numberOfLines={2}>
             {candidate.bio}
           </Text>
         )}
