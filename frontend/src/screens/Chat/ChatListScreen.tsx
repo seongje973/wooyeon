@@ -41,7 +41,7 @@ export default function ChatListScreen() {
       renderItem={({ item }) => (
         <TouchableOpacity
           style={styles.row}
-          onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.matchId, name: item.user.nickname } })}
+          onPress={() => router.push({ pathname: '/chat/[id]', params: { id: item.matchId, name: item.user.nickname, userId: item.user.userId } })}
         >
           {item.user.photoUrl ? (
             <Image source={{ uri: item.user.photoUrl }} style={styles.avatar} />

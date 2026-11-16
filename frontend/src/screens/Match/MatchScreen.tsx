@@ -113,7 +113,7 @@ export default function MatchScreen() {
         style={styles.matchButton}
         onPress={() => {
           setMatched(null);
-          router.push({ pathname: '/chat/[id]', params: { id: matched.matchId, name: matched.candidate.nickname } });
+          router.push({ pathname: '/chat/[id]', params: { id: matched.matchId, name: matched.candidate.nickname, userId: matched.candidate.userId } });
         }}
       >
         <Text style={styles.matchButtonText}>채팅하러 가기</Text>
