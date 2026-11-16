@@ -14,6 +14,26 @@ interface MessageRow {
 
 const toMessage = (m: MessageRow) => ({ id: m.id, senderId: m.sender, body: m.body, createdAt: m.created_at });
 
+// 앱(ChatRoomScreen)은 같은 이름의 채널을 구독하다가 신호가 오면 GET messages로 새 메시지를 가져간다.
+// 공개 채널이라 내용은 싣지 않고, 읽기 권한 확인은 API에서 한다.
+const notifyNewMessage = async (matchId: string) => {
+  const channel = supabase.channel(`chat:${matchId}`);
+  try {
+    // 한 번 놓치면 상대 화면은 앱의 보조 조회 주기까지 늦어지므로 한 번 더 보낸다.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const result = await channel.httpSend('message', {}).catch((err: unknown) => ({
+        success: false as const,
+        status: 0,
+        error: String(err),
+      }));
+      if (result.success) return;
+      console.error('채팅 실시간 알림 실패:', result.status, result.error);
+    }
+  } finally {
+    await supabase.removeChannel(channel);
+  }
+};
+
 @Injectable()
 export class ChatService {
   constructor(private readonly matching: MatchingService) {}
@@ -70,6 +90,8 @@ export class ChatService {
       .select('id, sender, body, created_at')
       .single();
     if (error) throw error;
+    // 알림이 실패해도 메시지는 저장됐으므로 응답을 기다리게 하지 않는다.
+    void notifyNewMessage(matchId);
     return toMessage(data);
   }
 }
