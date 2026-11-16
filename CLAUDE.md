@@ -91,7 +91,7 @@
 함정:
 
 - `tsconfig.json`의 `"ignoreDeprecations": "6.0"`은 설치된 TypeScript 5.9에서 TS5103 에러가 난다. 그래서 타입 검사는 위처럼 `--ignoreDeprecations 5.0`을 붙여 돌린다. `tsconfig.json`은 확인 없이 고치지 않는다.
-- `src/api/auth.ts`는 axios로 `https://api.wooyeon.com`(임시 주소, 이 레포에 서버 없음)을 부르고, 로그인은 Supabase를 쓴다. 서버 호출을 새로 만들 때는 어느 쪽으로 할지 먼저 묻는다.
+- 앱의 서버 호출은 `src/api/client.ts`의 `request`로 한다. `EXPO_PUBLIC_API_URL`(backend 주소)로 Supabase access token을 붙여 보낸다. 웹에서 `Alert.alert`는 아무것도 띄우지 않으므로, 결과·오류는 화면 안 문구로 보여 준다.
 - 아직 테스트 러너가 없다. 테스트를 추가하려면 먼저 도구(예: jest-expo) 도입을 확인받는다.
 - 로그인 여부는 `app/_layout.tsx`가 Supabase 세션으로 정한다. 실제 로그인 없이 웹에서 로그인 후 화면을 보려면, `EXPO_PUBLIC_SUPABASE_URL=https://dummy.supabase.co`로 띄우고 `localStorage`의 `sb-dummy-auth-token`(키는 `sb-<URL 호스트 첫 부분>-auth-token`)에 만료 전 `expires_at`을 가진 가짜 세션 JSON을 넣은 뒤 새로고침한다.
 - `app.json`의 `scheme: "wooyeon"`은 소셜 로그인 리디렉션(`Linking.createURL('/')`)에 쓰인다. 바꾸면 Supabase에 등록된 리디렉션 URL도 같이 바꿔야 로그인이 된다.
