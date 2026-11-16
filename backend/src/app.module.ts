@@ -1,11 +1,26 @@
 import { Module } from '@nestjs/common';
+import { ChatController } from './chat/chat.controller.js';
+import { ChatService } from './chat/chat.service.js';
+import { MatchingController } from './matching/matching.controller.js';
+import { MatchingService } from './matching/matching.service.js';
+import { PartyController } from './party/party.controller.js';
+import { PartyService } from './party/party.service.js';
 import { ProfileController } from './profile/profile.controller.js';
 import { ProfileService } from './profile/profile.service.js';
+import { SafetyController } from './safety/safety.controller.js';
+import { SafetyService } from './safety/safety.service.js';
 import { VerificationController } from './verification/verification.controller.js';
 import { VerificationService } from './verification/verification.service.js';
 
 @Module({
-  controllers: [VerificationController, ProfileController],
-  providers: [VerificationService, ProfileService],
+  controllers: [
+    VerificationController,
+    ProfileController,
+    MatchingController,
+    ChatController,
+    SafetyController,
+    PartyController,
+  ],
+  providers: [VerificationService, ProfileService, MatchingService, ChatService, SafetyService, PartyService],
 })
 export class AppModule {}
