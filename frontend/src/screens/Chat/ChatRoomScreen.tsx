@@ -10,10 +10,9 @@ import { matchingApi } from '@/api/matching';
 import { safetyApi } from '@/api/safety';
 import { styles } from './ChatRoomScreen.styles';
 
-const POLL_MS = 3000;
 const REPORT_REASONS = ['불쾌한 말이나 욕설', '사진·정보 도용 의심', '광고·스팸', '기타'];
 
-// 보낸 메시지와 폴링으로 받은 메시지가 겹칠 수 있어 id로 합친다.
+// 보낸 메시지와 실시간 신호로 받은 메시지가 겹칠 수 있어 id로 합친다.
 const merge = (prev: Message[], incoming: Message[]) => {
   const ids = new Set(prev.map((m) => m.id));
   const added = incoming.filter((m) => !ids.has(m.id));
@@ -39,9 +38,11 @@ export default function ChatRoomScreen() {
     lastAt.current = messages[messages.length - 1]?.createdAt;
   }, [messages]);
 
+  // 서버가 메시지를 저장하면 `chat:<matchId>` 채널로 신호만 보낸다(backend chat.service.ts).
+  // 연결되거나 다시 연결될 때마다 받아 와서, 끊긴 동안 온 메시지도 채운다.
   useEffect(() => {
     let active = true;
-    const poll = () =>
+    const fetchNew = () =>
       chatApi
         .messages(id, lastAt.current)
         .then((list) => {
@@ -50,11 +51,16 @@ export default function ChatRoomScreen() {
           setError('');
         })
         .catch((err) => active && setError((err as Error).message));
-    poll();
-    const timer = setInterval(poll, POLL_MS);
+    fetchNew();
+    const channel = supabase
+      .channel(`chat:${id}`)
+      .on('broadcast', { event: 'message' }, fetchNew)
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') fetchNew();
+      });
     return () => {
       active = false;
-      clearInterval(timer);
+      supabase.removeChannel(channel);
     };
   }, [id]);
 

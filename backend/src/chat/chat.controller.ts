@@ -12,7 +12,7 @@ export class ChatController {
     return this.service.rooms(req.userId);
   }
 
-  // 앱은 채팅방을 열어 둔 동안 마지막 메시지 시각을 after로 주며 몇 초마다 새 메시지를 가져간다.
+  // 앱은 실시간 신호를 받거나 다시 연결될 때 마지막 메시지 시각을 after로 주고 새 메시지만 가져간다.
   @Get(':matchId/messages')
   messages(
     @Req() req: AuthedRequest,
