@@ -1,4 +1,4 @@
-import { Colors } from './Colors';
+import { Colors } from '@/constants/Colors';
 
 export const Radius = {
   card: 24,
