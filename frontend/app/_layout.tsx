@@ -12,10 +12,10 @@ export default function RootLayout() {
   const isAuthenticated = session !== null;
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      setSession(data.session);
-      setIsSessionLoaded(true);
-    });
+    supabase.auth
+      .getSession()
+      .then(({ data }) => setSession(data.session))
+      .finally(() => setIsSessionLoaded(true));
     const { data } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
     });
