@@ -2,6 +2,7 @@ import { BadRequestException, ConflictException, Injectable, NotFoundException }
 import { supabase } from '../supabase.js';
 import { Universities, distanceKm } from '../universities.js';
 import { photoUrl } from '../profile/profile.service.js';
+import { blockedUserIds } from '../safety/blocks.js';
 
 const CANDIDATE_LIMIT = 20;
 
@@ -38,7 +39,8 @@ export class MatchingService {
       .select('to_user')
       .eq('from_user', userId);
     if (swipedError) throw swipedError;
-    const excluded = [userId, ...(swiped ?? []).map((s) => s.to_user)];
+    const blocked = await blockedUserIds(userId);
+    const excluded = [userId, ...(swiped ?? []).map((s) => s.to_user), ...blocked];
 
     const { data, error } = await supabase
       .from('profiles')
@@ -71,7 +73,9 @@ export class MatchingService {
       .eq('user_id', targetUserId)
       .maybeSingle();
     if (targetError) throw targetError;
-    if (!target) throw new NotFoundException('상대를 찾을 수 없습니다.');
+    if (!target || (await blockedUserIds(userId)).has(targetUserId)) {
+      throw new NotFoundException('상대를 찾을 수 없습니다.');
+    }
 
     const { error } = await supabase.from('likes').insert({ from_user: userId, to_user: targetUserId, liked });
     if (error?.code === '23505') throw new ConflictException('이미 고른 상대입니다.');
@@ -111,9 +115,11 @@ export class MatchingService {
       .or(`user_a.eq.${userId},user_b.eq.${userId}`)
       .order('created_at', { ascending: false });
     if (error) throw error;
-    if (!data?.length) return [];
+    const blocked = await blockedUserIds(userId);
+    const visible = (data ?? []).filter((m) => !blocked.has(m.user_a === userId ? m.user_b : m.user_a));
+    if (!visible.length) return [];
 
-    const otherIds = data.map((m) => (m.user_a === userId ? m.user_b : m.user_a));
+    const otherIds = visible.map((m) => (m.user_a === userId ? m.user_b : m.user_a));
     const { data: profiles, error: profileError } = await supabase
       .from('profiles')
       .select('user_id, nickname, birth_year, photo_path, university_id')
@@ -121,7 +127,7 @@ export class MatchingService {
     if (profileError) throw profileError;
     const byId = new Map((profiles ?? []).map((p) => [p.user_id, p]));
 
-    return data.flatMap((m) => {
+    return visible.flatMap((m) => {
       const other = byId.get(m.user_a === userId ? m.user_b : m.user_a);
       if (!other) return [];
       return [
@@ -138,5 +144,18 @@ export class MatchingService {
         },
       ];
     });
+  }
+
+  // 대화도 함께 지워진다 (messages.match_id on delete cascade). 좋아요 기록은 남겨서 다시 후보로 나오지 않는다.
+  async unmatch(userId: string, matchId: string) {
+    const { data, error } = await supabase
+      .from('matches')
+      .delete()
+      .eq('id', matchId)
+      .or(`user_a.eq.${userId},user_b.eq.${userId}`)
+      .select('id');
+    if (error) throw error;
+    if (!data?.length) throw new NotFoundException('매칭을 찾을 수 없습니다.');
+    return { unmatched: true };
   }
 }
