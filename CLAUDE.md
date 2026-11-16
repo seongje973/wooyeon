@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-우연(Wooyeon)은 대학생을 위한 소개팅 앱이다. 학교 이메일(`.ac.kr`)로 인증하고, 1:1 매칭·다대다 파티·채팅을 제공한다. 지금 레포에는 `frontend/`만 있다: Expo SDK 54 + React Native 0.81 + React 19.1 + TypeScript, 라우팅은 expo-router 6, 로그인·데이터는 Supabase(`@supabase/supabase-js`)를 쓴다. 이 문서에는 꼭 지켜야 하는 규칙만 둔다. 설치와 실행은 `frontend/README.md`를 본다 (`cd frontend && npm install && npx expo start`).
+우연(Wooyeon)은 대학생을 위한 소개팅 앱이다. 학교 이메일(`.ac.kr`)로 인증하고, 1:1 매칭·다대다 파티·채팅을 제공한다. 레포에는 앱 `frontend/`와 API 서버 `backend/`가 있다. 앱은 Expo SDK 54 + React Native 0.81 + React 19.1 + TypeScript, 라우팅은 expo-router 6, 로그인·데이터는 Supabase(`@supabase/supabase-js`)를 쓴다. 서버는 Node.js + NestJS + TypeScript(ESM)이고, Supabase 로그인 토큰을 확인해 앱 대신 Supabase에 쓴다. 이 문서에는 꼭 지켜야 하는 규칙만 둔다. 설치와 실행은 `frontend/README.md`, `backend/README.md`를 본다.
 
 ## 작업 원칙
 
@@ -67,6 +67,9 @@
 - 탭은 `app/(tabs)/`(홈·매칭·파티·채팅·마이), 로그인 흐름은 `app/(auth)/`, 로그인 여부에 따른 이동은 `app/_layout.tsx`에서 한다. 새 Stack 화면은 `app/_layout.tsx`에도 등록한다.
 - import는 `app → screens → components → constants · lib · api` 방향으로만 한다. `components`는 `screens`를 import하지 않는다.
 - `src/` 아래는 `@/` 별칭으로 import한다 (`@/components/CommonButton`). 상대 경로(`../../`)를 새로 쓰지 않는다.
+- 서버 로직은 `backend/src/<기능>/`에 컨트롤러·서비스로 두고 `app.module.ts`에 등록한다. 로그인이 필요한 API는 `AuthGuard`를 붙이고 `req.userId`를 쓴다. 서버는 ESM이라 상대 import에 `.js` 확장자를 붙인다.
+- 서버만 쓰는 테이블은 RLS를 켜고 정책을 두지 않아 앱에서 막는다. 테이블 변경은 `backend/supabase/migrations/`에 SQL로 남기고, 실제 적용은 확인받는다.
+- 학교 목록은 `frontend/src/constants/Universities.ts`와 `backend/src/universities.ts` 두 곳에 있다. 한쪽을 고치면 다른 쪽도 같은 PR에서 고친다.
 - Supabase는 `src/lib/supabase.ts`의 `supabase` 하나만 쓴다. `createClient`를 다른 곳에서 다시 부르지 않는다. 이 클라이언트가 웹은 `localStorage`, 앱은 AsyncStorage에 세션을 저장한다.
 
 ## 프론트엔드 규칙
@@ -83,7 +86,7 @@
 
 ## 검증
 
-`frontend/`를 바꿨으면 둘 다 돌린다. 문서만 바꿨으면 내용·링크 검토로 끝낸다.
+`frontend/`를 바꿨으면 아래 두 개를, `backend/`를 바꿨으면 `npm run build --prefix backend`를 돌린다. 문서만 바꿨으면 내용·링크 검토로 끝낸다.
 
 - `npm run lint --prefix frontend` (경고는 기존 것이 있다. 내 변경으로 새 경고·에러가 생기지 않으면 된다)
 - `cd frontend && npx tsc --noEmit --ignoreDeprecations 5.0`
@@ -91,7 +94,8 @@
 함정:
 
 - `tsconfig.json`의 `"ignoreDeprecations": "6.0"`은 설치된 TypeScript 5.9에서 TS5103 에러가 난다. 그래서 타입 검사는 위처럼 `--ignoreDeprecations 5.0`을 붙여 돌린다. `tsconfig.json`은 확인 없이 고치지 않는다.
-- `src/api/auth.ts`는 axios로 `https://api.wooyeon.com`(임시 주소, 이 레포에 서버 없음)을 부르고, 로그인은 Supabase를 쓴다. 서버 호출을 새로 만들 때는 어느 쪽으로 할지 먼저 묻는다.
+- `src/api/auth.ts`는 axios로 `https://api.wooyeon.com`(임시 주소)을 부르고 `backend/`와 아직 연결돼 있지 않다. 새 서버 호출은 `backend/` API로 만든다.
+- 서버는 `SUPABASE_URL`·`SUPABASE_SERVICE_ROLE_KEY`가 없으면 바로 멈춘다. `RESEND_API_KEY`가 없으면 개발 중에는 인증번호를 서버 콘솔에 찍고, `NODE_ENV=production`에서는 발송이 실패한다.
 - 아직 테스트 러너가 없다. 테스트를 추가하려면 먼저 도구(예: jest-expo) 도입을 확인받는다.
 - `app/_layout.tsx`의 `isAuthenticated`는 `false`로 고정돼 있고 Supabase 세션과 연결돼 있지 않다. 로그인해도 탭 화면에 들어가면 로그인 화면으로 돌아간다. 로그인 후 동작을 확인할 때 이 점을 감안하고, 고치는 일은 따로 요청받아 한다.
 - `app.json`의 `scheme: "wooyeon"`은 소셜 로그인 리디렉션(`Linking.createURL('/')`)에 쓰인다. 바꾸면 Supabase에 등록된 리디렉션 URL도 같이 바꿔야 로그인이 된다.
