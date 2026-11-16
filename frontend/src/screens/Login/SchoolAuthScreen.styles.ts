@@ -34,6 +34,14 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.error,
   },
+  codeInput: {
+    marginTop: 24,
+  },
+  message: {
+    marginTop: 8,
+    fontSize: 14,
+    color: Colors.gray800,
+  },
   footer: {
     padding: 24,
     alignItems: "center",

@@ -51,10 +51,14 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     color: Colors.primary,
   },
-  tags: {
+  photoImage: {
+    width: '100%',
+    height: '100%',
+  },
+  bio: {
     marginTop: 8,
     fontSize: 14,
-    color: Colors.primaryDark,
+    color: Colors.gray800,
   },
   stamp: {
     position: 'absolute',
@@ -110,5 +114,53 @@ export const styles = StyleSheet.create({
   emptyText: {
     fontSize: 15,
     color: Colors.gray600,
+    textAlign: 'center',
+  },
+  reload: {
+    marginTop: 16,
+    fontSize: 15,
+    color: Colors.primary,
+  },
+  message: {
+    marginTop: 12,
+    marginHorizontal: 16,
+    fontSize: 14,
+    color: Colors.error,
+  },
+  matchOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 32,
+    backgroundColor: Colors.overlay,
+  },
+  matchTitle: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: Colors.white,
+    marginBottom: 12,
+  },
+  matchText: {
+    fontSize: 16,
+    color: Colors.white,
+    textAlign: 'center',
+    marginBottom: 32,
+  },
+  matchButton: {
+    alignSelf: 'stretch',
+    alignItems: 'center',
+    paddingVertical: 16,
+    borderRadius: 12,
+    backgroundColor: Colors.love,
+    marginBottom: 16,
+  },
+  matchButtonText: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: Colors.white,
+  },
+  matchLater: {
+    fontSize: 15,
+    color: Colors.white,
   },
 });
