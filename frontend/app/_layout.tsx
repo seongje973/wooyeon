@@ -12,12 +12,10 @@ export default function RootLayout() {
   const isAuthenticated = session !== null;
 
   useEffect(() => {
-    supabase.auth
-      .getSession()
-      .then(({ data }) => setSession(data.session))
-      .finally(() => setIsSessionLoaded(true));
+    // 구독하면 저장된 세션으로 INITIAL_SESSION이 먼저 온다. 읽기에 실패해도 null로 온다.
     const { data } = supabase.auth.onAuthStateChange((_event, newSession) => {
       setSession(newSession);
+      setIsSessionLoaded(true);
     });
     return () => data.subscription.unsubscribe();
   }, []);
