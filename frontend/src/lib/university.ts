@@ -1,8 +1,9 @@
 import { Universities, University } from '@/constants/Universities';
 
 export const findUniversityByEmail = (email: string): University | undefined => {
-  const domain = email.trim().toLowerCase().split('@')[1];
-  if (!domain) return undefined;
+  const parts = email.trim().toLowerCase().split('@');
+  if (parts.length !== 2 || !parts[0] || !parts[1]) return undefined;
+  const domain = parts[1];
   return Universities.find((u) =>
     u.domains.some((d) => domain === d || domain.endsWith(`.${d}`)),
   );

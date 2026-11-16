@@ -24,6 +24,6 @@ export const Universities: University[] = [
   { id: 'dongguk', name: '동국대학교', domains: ['dongguk.edu'], latitude: 37.5582, longitude: 127.0002 },
   { id: 'hongik', name: '홍익대학교', domains: ['hongik.ac.kr'], latitude: 37.5509, longitude: 126.9255 },
   { id: 'uos', name: '서울시립대학교', domains: ['uos.ac.kr'], latitude: 37.5838, longitude: 127.0587 },
-  { id: 'sookmyung', name: '숙명여자대학교', domains: ['sookmyung.ac.kr'], latitude: 37.5463, longitude: 126.9648 },
+  { id: 'sookmyung', name: '숙명여자대학교', domains: ['sookmyung.ac.kr', 'sm.ac.kr'], latitude: 37.5463, longitude: 126.9648 },
   { id: 'kookmin', name: '국민대학교', domains: ['kookmin.ac.kr'], latitude: 37.6106, longitude: 126.997 },
 ];
