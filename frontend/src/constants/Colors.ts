@@ -5,6 +5,7 @@ export const Colors = {
   primary: "#826AED",
   primaryLight: "#9480EF",
   primaryDark: "#765CEB",
+  primarySoft: "#F1EEFD", // 칩·선택 배경처럼 옅게 깔리는 메인 색
 
   // 포인트 및 보조 컬러
   secondary: "#C879FF", // 보라색 포인트 (알림, 별점 등)
@@ -32,6 +33,8 @@ export const Colors = {
 
   // 투명도 포함 (필요 시)
   overlay: "rgba(0, 0, 0, 0.5)",
+  scrim: "#000000", // 사진 위 글자를 읽히게 까는 어두운 층 (투명도는 쓰는 곳에서 정한다)
+  shadow: "rgba(33, 37, 41, 0.12)",
 } as const;
 
 // 타입 추론을 위한 export
