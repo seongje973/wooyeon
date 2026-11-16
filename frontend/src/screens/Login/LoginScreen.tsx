@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 import SocialButton from '@/components/SocialButton';
+import Wordmark from '@/components/Wordmark';
 import { supabase } from '@/lib/supabase';
 import * as WebBrowser from 'expo-web-browser';
 import { makeRedirectUri } from 'expo-auth-session';
@@ -90,6 +91,7 @@ const LoginScreen = () => {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
+        <Wordmark color={Colors.white} size={64} />
         <Text style={styles.title}>
           3초 만에 시작하는{'\n'}
           설레는 우연
@@ -109,16 +111,17 @@ const LoginScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.white },
+  container: { flex: 1, backgroundColor: Colors.primary },
   header: { flex: 1, justifyContent: 'center', paddingHorizontal: 24 },
   title: {
-    fontSize: 32,
+    fontSize: 30,
     fontWeight: 'bold',
-    color: Colors.text,
+    color: Colors.white,
+    marginTop: 24,
     marginBottom: 16,
-    lineHeight: 44,
+    lineHeight: 42,
   },
-  subtitle: { fontSize: 16, color: Colors.gray600, lineHeight: 24 },
+  subtitle: { fontSize: 16, color: Colors.primarySoft, lineHeight: 24 },
   footer: { padding: 24, paddingBottom: 60 },
 });
 
