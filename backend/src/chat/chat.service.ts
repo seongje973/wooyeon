@@ -19,10 +19,16 @@ const toMessage = (m: MessageRow) => ({ id: m.id, senderId: m.sender, body: m.bo
 const notifyNewMessage = async (matchId: string) => {
   const channel = supabase.channel(`chat:${matchId}`);
   try {
-    const result = await channel.httpSend('message', {});
-    if (!result.success) console.error('채팅 실시간 알림 실패:', result.status, result.error);
-  } catch (err) {
-    console.error('채팅 실시간 알림 실패:', err);
+    // 한 번 놓치면 상대 화면은 앱의 보조 조회 주기까지 늦어지므로 한 번 더 보낸다.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const result = await channel.httpSend('message', {}).catch((err: unknown) => ({
+        success: false as const,
+        status: 0,
+        error: String(err),
+      }));
+      if (result.success) return;
+      console.error('채팅 실시간 알림 실패:', result.status, result.error);
+    }
   } finally {
     await supabase.removeChannel(channel);
   }

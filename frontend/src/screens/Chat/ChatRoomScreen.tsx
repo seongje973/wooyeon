@@ -10,6 +10,10 @@ import { matchingApi } from '@/api/matching';
 import { safetyApi } from '@/api/safety';
 import { styles } from './ChatRoomScreen.styles';
 
+// backend chat.service.ts의 PAGE_SIZE와 같아야 한다. 꽉 찬 응답이면 다음 장이 더 있다는 뜻이다.
+const PAGE_SIZE = 100;
+// 실시간 신호나 조회가 한 번 실패해도 따라잡도록 하는 보조 조회 주기.
+const FALLBACK_MS = 30000;
 const REPORT_REASONS = ['불쾌한 말이나 욕설', '사진·정보 도용 의심', '광고·스팸', '기타'];
 
 // 보낸 메시지와 실시간 신호로 받은 메시지가 겹칠 수 있어 id로 합친다.
@@ -27,30 +31,45 @@ export default function ChatRoomScreen() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState('');
   const [error, setError] = useState('');
-  const lastAt = useRef<string | undefined>(undefined);
   const listRef = useRef<FlatList<Message>>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => setMyId(data.session?.user.id ?? null));
   }, []);
 
-  useEffect(() => {
-    lastAt.current = messages[messages.length - 1]?.createdAt;
-  }, [messages]);
-
   // 서버가 메시지를 저장하면 `chat:<matchId>` 채널로 신호만 보낸다(backend chat.service.ts).
   // 연결되거나 다시 연결될 때마다 받아 와서, 끊긴 동안 온 메시지도 채운다.
   useEffect(() => {
     let active = true;
-    const fetchNew = () =>
-      chatApi
-        .messages(id, lastAt.current)
-        .then((list) => {
-          if (!active) return;
-          setMessages((prev) => merge(prev, list));
+    let running = false;
+    let again = false;
+    let cursor: string | undefined;
+    // 신호가 몰려도 조회는 하나씩만 돌리고, 도는 중에 온 신호는 끝난 뒤 한 번 더 조회한다.
+    const fetchNew = async () => {
+      if (running) {
+        again = true;
+        return;
+      }
+      running = true;
+      try {
+        do {
+          again = false;
+          let page: Message[];
+          do {
+            page = await chatApi.messages(id, cursor);
+            if (!active) return;
+            if (page.length) cursor = page[page.length - 1].createdAt;
+            const received = page;
+            setMessages((prev) => merge(prev, received));
+          } while (page.length === PAGE_SIZE);
           setError('');
-        })
-        .catch((err) => active && setError((err as Error).message));
+        } while (again);
+      } catch (err) {
+        if (active) setError((err as Error).message);
+      } finally {
+        running = false;
+      }
+    };
     fetchNew();
     const channel = supabase
       .channel(`chat:${id}`)
@@ -58,8 +77,10 @@ export default function ChatRoomScreen() {
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') fetchNew();
       });
+    const timer = setInterval(fetchNew, FALLBACK_MS);
     return () => {
       active = false;
+      clearInterval(timer);
       supabase.removeChannel(channel);
     };
   }, [id]);
