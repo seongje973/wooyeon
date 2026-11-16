@@ -1,35 +1,38 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import React, { useCallback, useState } from 'react';
+import { View, Text, Image, TouchableOpacity, Alert, Platform, ScrollView } from 'react-native';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { profileApi, type Profile } from '@/api/profile';
+import { safetyApi } from '@/api/safety';
+import { Universities } from '@/constants/Universities';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from './MyPageScreen.styles';
 
 export default function MyPageScreen() {
   const router = useRouter();
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
+  const schoolName = Universities.find((u) => u.id === profile?.universityId)?.name;
 
-  useEffect(() => {
-    getProfile();
-  }, []);
-
-  const getProfile = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setProfile(user.user_metadata);
-      }
-    } catch (error) {
-      console.log('프로필 로딩 실패:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 프로필 수정 화면에서 돌아왔을 때 바뀐 내용을 다시 받는다.
+  useFocusEffect(
+    useCallback(() => {
+      profileApi
+        .getMine()
+        .then(setProfile)
+        .catch((error) => console.log('프로필 로딩 실패:', error));
+    }, [])
+  );
 
   const handleLogout = async () => {
+    // 웹에서는 Alert.alert가 아무것도 띄우지 않아서 브라우저 확인 창을 쓴다.
+    if (Platform.OS === 'web') {
+      if (!window.confirm('정말 로그아웃 하시겠습니까?')) return;
+      await supabase.auth.signOut();
+      router.replace('/login');
+      return;
+    }
     Alert.alert('로그아웃', '정말 로그아웃 하시겠습니까?', [
       { text: '취소', style: 'cancel' },
       {
@@ -43,6 +46,18 @@ export default function MyPageScreen() {
     ]);
   };
 
+  const handleDeleteAccount = async () => {
+    setDeleteError('');
+    try {
+      await safetyApi.deleteAccount();
+      // 서버에서 계정이 지워져도 기기에 남은 세션은 직접 지워야 한다.
+      await supabase.auth.signOut({ scope: 'local' });
+      router.replace('/login');
+    } catch (error) {
+      setDeleteError((error as Error).message);
+    }
+  };
+
   // 3. 로그인 하러 가기 (로그인 안 된 상태일 때)
   const handleLogin = () => {
     router.push('/login');
@@ -53,21 +68,26 @@ export default function MyPageScreen() {
       {/* --- 프로필 카드 영역 --- */}
       <View style={styles.header}>
         <Image
-          source={{ uri: profile?.avatar_url || 'https://via.placeholder.com/150' }}
+          source={{ uri: profile?.photoUrl || 'https://via.placeholder.com/150' }}
           style={styles.avatar}
         />
         <Text style={styles.nickname}>
-          {profile ? profile.full_name || profile.name : '로그인이 필요해요'}
+          {profile ? profile.nickname : '로그인이 필요해요'}
         </Text>
-        <Text style={styles.email}>{profile ? profile.email : '게스트 모드입니다'}</Text>
+        <Text style={styles.email}>{profile ? schoolName : '게스트 모드입니다'}</Text>
       </View>
 
       {/* --- 메뉴 리스트 --- */}
       <View style={styles.menuContainer}>
         <MenuRow
+          icon="person-outline"
+          title="프로필 수정"
+          onPress={() => router.push('/profile-edit')}
+        />
+        <MenuRow
           icon="school-outline"
           title="학교 인증하기"
-          onPress={() => console.log('학교인증')}
+          onPress={() => router.push('/school-auth')}
         />
         <MenuRow icon="settings-outline" title="설정" onPress={() => console.log('설정')} />
         <MenuRow
@@ -89,6 +109,29 @@ export default function MyPageScreen() {
         >
           <Text style={[styles.logoutText, { color: 'white' }]}>로그인 하러가기</Text>
         </TouchableOpacity>
+      )}
+
+      {profile && (
+        <View style={styles.deleteArea}>
+          {confirmDelete ? (
+            <>
+              <Text style={styles.deleteNotice}>
+                탈퇴하면 프로필·사진·매칭·대화가 모두 지워지고 되돌릴 수 없어요.
+              </Text>
+              <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAccount}>
+                <Text style={styles.deleteButtonText}>탈퇴하기</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setConfirmDelete(false)}>
+                <Text style={styles.deleteLink}>취소</Text>
+              </TouchableOpacity>
+            </>
+          ) : (
+            <TouchableOpacity onPress={() => setConfirmDelete(true)}>
+              <Text style={styles.deleteLink}>회원 탈퇴</Text>
+            </TouchableOpacity>
+          )}
+          {deleteError !== '' && <Text style={styles.deleteNotice}>{deleteError}</Text>}
+        </View>
       )}
 
       <View style={{ height: 50 }} />

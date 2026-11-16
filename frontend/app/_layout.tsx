@@ -3,6 +3,8 @@ import { Stack, useRouter, useSegments } from 'expo-router';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import type { Session } from '@supabase/supabase-js';
 import { supabase } from '@/lib/supabase';
+import { ApiError } from '@/api/client';
+import { profileApi } from '@/api/profile';
 
 export default function RootLayout() {
   const [session, setSession] = useState<Session | null>(null);
@@ -36,6 +38,21 @@ export default function RootLayout() {
     }
   }, [isAuthenticated, isSessionLoaded, segments]);
 
+  // 탭 화면에 들어올 때 프로필이 없으면 학교 인증 → 프로필 만들기로 보낸다.
+  // 프로필을 저장하고 탭으로 돌아오면 다시 확인해야 해서, 프로필을 찾을 때까지 탭에 들어올 때마다 확인한다.
+  const [hasProfile, setHasProfile] = useState(false);
+  const userId = session?.user.id;
+  useEffect(() => setHasProfile(false), [userId]);
+  useEffect(() => {
+    if (!userId || hasProfile || segments[0] !== '(tabs)') return;
+    profileApi
+      .getMine()
+      .then(() => setHasProfile(true))
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 404) router.replace('/school-auth');
+      });
+  }, [userId, hasProfile, segments, router]);
+
   return (
     <SafeAreaProvider>
       <Stack>
@@ -50,8 +67,11 @@ export default function RootLayout() {
           name="school-auth"
           options={{ title: '학교 인증', headerBackTitle: '뒤로' }}
         />
+        <Stack.Screen name="profile-edit" options={{ title: '프로필', headerBackTitle: '뒤로' }} />
         <Stack.Screen name="index" options={{ headerShown: false }} />
         <Stack.Screen name="chat/[id]" options={{ presentation: 'card' }} />
+        <Stack.Screen name="party/[id]" options={{ title: '파티', headerBackTitle: '뒤로' }} />
+        <Stack.Screen name="party-new" options={{ title: '파티 열기', headerBackTitle: '뒤로' }} />
       </Stack>
     </SafeAreaProvider>
   );

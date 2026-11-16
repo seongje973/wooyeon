@@ -48,7 +48,7 @@ const SchoolAuthScreen = () => {
   const handleVerify = () =>
     run(async () => {
       await authApi.checkVerificationCode(code);
-      router.replace('/(tabs)');
+      router.replace('/profile-edit');
     });
 
   return (
