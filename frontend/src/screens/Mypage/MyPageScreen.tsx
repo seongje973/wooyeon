@@ -1,33 +1,26 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import { View, Text, Image, TouchableOpacity, Alert, ScrollView } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
+import { profileApi, type Profile } from '@/api/profile';
+import { Universities } from '@/constants/Universities';
 import { Ionicons } from '@expo/vector-icons';
 import { styles } from './MyPageScreen.styles';
 
 export default function MyPageScreen() {
   const router = useRouter();
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const schoolName = Universities.find((u) => u.id === profile?.universityId)?.name;
 
-  useEffect(() => {
-    getProfile();
-  }, []);
-
-  const getProfile = async () => {
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (user) {
-        setProfile(user.user_metadata);
-      }
-    } catch (error) {
-      console.log('프로필 로딩 실패:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  // 프로필 수정 화면에서 돌아왔을 때 바뀐 내용을 다시 받는다.
+  useFocusEffect(
+    useCallback(() => {
+      profileApi
+        .getMine()
+        .then(setProfile)
+        .catch((error) => console.log('프로필 로딩 실패:', error));
+    }, [])
+  );
 
   const handleLogout = async () => {
     Alert.alert('로그아웃', '정말 로그아웃 하시겠습니까?', [
@@ -53,21 +46,26 @@ export default function MyPageScreen() {
       {/* --- 프로필 카드 영역 --- */}
       <View style={styles.header}>
         <Image
-          source={{ uri: profile?.avatar_url || 'https://via.placeholder.com/150' }}
+          source={{ uri: profile?.photoUrl || 'https://via.placeholder.com/150' }}
           style={styles.avatar}
         />
         <Text style={styles.nickname}>
-          {profile ? profile.full_name || profile.name : '로그인이 필요해요'}
+          {profile ? profile.nickname : '로그인이 필요해요'}
         </Text>
-        <Text style={styles.email}>{profile ? profile.email : '게스트 모드입니다'}</Text>
+        <Text style={styles.email}>{profile ? schoolName : '게스트 모드입니다'}</Text>
       </View>
 
       {/* --- 메뉴 리스트 --- */}
       <View style={styles.menuContainer}>
         <MenuRow
+          icon="person-outline"
+          title="프로필 수정"
+          onPress={() => router.push('/profile-edit')}
+        />
+        <MenuRow
           icon="school-outline"
           title="학교 인증하기"
-          onPress={() => console.log('학교인증')}
+          onPress={() => router.push('/school-auth')}
         />
         <MenuRow icon="settings-outline" title="설정" onPress={() => console.log('설정')} />
         <MenuRow
