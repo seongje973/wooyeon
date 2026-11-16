@@ -5,11 +5,13 @@ import { MatchingController } from './matching/matching.controller.js';
 import { MatchingService } from './matching/matching.service.js';
 import { ProfileController } from './profile/profile.controller.js';
 import { ProfileService } from './profile/profile.service.js';
+import { SafetyController } from './safety/safety.controller.js';
+import { SafetyService } from './safety/safety.service.js';
 import { VerificationController } from './verification/verification.controller.js';
 import { VerificationService } from './verification/verification.service.js';
 
 @Module({
-  controllers: [VerificationController, ProfileController, MatchingController, ChatController],
-  providers: [VerificationService, ProfileService, MatchingService, ChatService],
+  controllers: [VerificationController, ProfileController, MatchingController, ChatController, SafetyController],
+  providers: [VerificationService, ProfileService, MatchingService, ChatService, SafetyService],
 })
 export class AppModule {}

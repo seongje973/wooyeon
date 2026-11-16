@@ -34,3 +34,6 @@ node --env-file=.env dist/main.js
 - `GET /chats` → 내 채팅방(매칭) 목록과 마지막 메시지
 - `GET /chats/:matchId/messages?after=<createdAt>` → 메시지를 오래된 순으로 최대 100개. `after`를 주면 그 뒤 것만. 매칭 당사자가 아니면 403.
 - `POST /chats/:matchId/messages` `{ body }` → 보낸 메시지. 1~1000자.
+- `POST /safety/blocks` `{ userId }` → 차단. 서로 후보·매칭·채팅에서 보이지 않는다. 다시 차단해도 그대로 성공.
+- `POST /safety/reports` `{ userId, reason }` → 신고 기록(1~500자). 신고한 사람이 탈퇴해도 남는다.
+- `DELETE /account` → 탈퇴. 프로필 사진 파일을 지우고 Supabase 사용자를 지운다. 나머지 기록은 `on delete cascade`로 같이 지워진다.

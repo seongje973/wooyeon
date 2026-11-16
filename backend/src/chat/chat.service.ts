@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { supabase } from '../supabase.js';
 import { MatchingService } from '../matching/matching.service.js';
+import { blockedUserIds } from '../safety/blocks.js';
 
 const PAGE_SIZE = 100;
 
@@ -27,6 +28,8 @@ export class ChatService {
     if (!data || (data.user_a !== userId && data.user_b !== userId)) {
       throw new ForbiddenException('이 채팅방에 들어갈 수 없습니다.');
     }
+    const other = data.user_a === userId ? data.user_b : data.user_a;
+    if ((await blockedUserIds(userId)).has(other)) throw new ForbiddenException('이 채팅방에 들어갈 수 없습니다.');
   }
 
   async rooms(userId: string) {
