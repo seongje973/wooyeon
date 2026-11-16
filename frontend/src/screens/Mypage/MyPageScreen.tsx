@@ -1,5 +1,5 @@
 import React, { useCallback, useState } from 'react';
-import { View, Text, Image, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, Image, TouchableOpacity, Alert, Platform, ScrollView } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { supabase } from '../../lib/supabase';
 import { profileApi, type Profile } from '@/api/profile';
@@ -26,6 +26,13 @@ export default function MyPageScreen() {
   );
 
   const handleLogout = async () => {
+    // 웹에서는 Alert.alert가 아무것도 띄우지 않아서 브라우저 확인 창을 쓴다.
+    if (Platform.OS === 'web') {
+      if (!window.confirm('정말 로그아웃 하시겠습니까?')) return;
+      await supabase.auth.signOut();
+      router.replace('/login');
+      return;
+    }
     Alert.alert('로그아웃', '정말 로그아웃 하시겠습니까?', [
       { text: '취소', style: 'cancel' },
       {

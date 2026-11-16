@@ -23,4 +23,7 @@ export const matchingApi = {
     request<{ matched: boolean; matchId?: string }>('/matching/swipes', 'POST', { targetUserId, liked }),
 
   matches: () => request<Match[]>('/matching/matches'),
+
+  unmatch: (matchId: string) =>
+    request<{ unmatched: true }>(`/matching/matches/${matchId}`, 'DELETE'),
 };

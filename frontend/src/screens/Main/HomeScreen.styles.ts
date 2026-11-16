@@ -1,4 +1,5 @@
 import { StyleSheet, Dimensions } from 'react-native';
+import { Colors } from '@/constants/Colors';
 
 const { width } = Dimensions.get('window');
 
@@ -32,6 +33,10 @@ export const styles = StyleSheet.create({
   cardName: { fontSize: 18, fontWeight: 'bold', marginBottom: 5 },
   cardMajor: { fontSize: 14, color: '#666', marginBottom: 5 },
   cardTag: { fontSize: 12, color: '#ff7f00', fontWeight: 'bold' },
+  profileCard: { backgroundColor: Colors.gray100, overflow: 'hidden' },
+  cardPhoto: { ...StyleSheet.absoluteFillObject, opacity: 0.35 },
+  emptyCard: { backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center' },
+  emptyText: { fontSize: 14, color: Colors.gray600, textAlign: 'center' },
 
   // 게시판 영역
   sectionHeader: {
