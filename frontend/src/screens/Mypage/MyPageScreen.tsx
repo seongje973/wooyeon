@@ -6,6 +6,7 @@ import { profileApi, type Profile } from '@/api/profile';
 import { safetyApi } from '@/api/safety';
 import { Universities } from '@/constants/Universities';
 import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '@/constants/Colors';
 import { styles } from './MyPageScreen.styles';
 
 export default function MyPageScreen() {
@@ -67,14 +68,27 @@ export default function MyPageScreen() {
     <ScrollView style={styles.container}>
       {/* --- 프로필 카드 영역 --- */}
       <View style={styles.header}>
-        <Image
-          source={{ uri: profile?.photoUrl || 'https://via.placeholder.com/150' }}
-          style={styles.avatar}
-        />
+        <TouchableOpacity onPress={() => router.push('/profile-edit')} disabled={!profile}>
+          {profile?.photoUrl ? (
+            <Image source={{ uri: profile.photoUrl }} style={styles.avatar} />
+          ) : (
+            <View style={styles.avatar}>
+              <Ionicons name="person" size={56} color={Colors.gray400} />
+            </View>
+          )}
+          {profile && (
+            <View style={styles.editBadge}>
+              <Ionicons name="pencil" size={16} color={Colors.white} />
+            </View>
+          )}
+        </TouchableOpacity>
         <Text style={styles.nickname}>
           {profile ? profile.nickname : '로그인이 필요해요'}
         </Text>
-        <Text style={styles.email}>{profile ? schoolName : '게스트 모드입니다'}</Text>
+        <View style={styles.schoolRow}>
+          {profile && <Ionicons name="school" size={14} color={Colors.primary} />}
+          <Text style={styles.email}>{profile ? schoolName : '게스트 모드입니다'}</Text>
+        </View>
       </View>
 
       {/* --- 메뉴 리스트 --- */}
@@ -103,11 +117,8 @@ export default function MyPageScreen() {
           <Text style={styles.logoutText}>로그아웃</Text>
         </TouchableOpacity>
       ) : (
-        <TouchableOpacity
-          style={[styles.logoutButton, { backgroundColor: '#ff7f00' }]}
-          onPress={handleLogin}
-        >
-          <Text style={[styles.logoutText, { color: 'white' }]}>로그인 하러가기</Text>
+        <TouchableOpacity style={[styles.logoutButton, styles.loginButton]} onPress={handleLogin}>
+          <Text style={[styles.logoutText, styles.loginText]}>로그인 하러가기</Text>
         </TouchableOpacity>
       )}
 
@@ -143,9 +154,11 @@ export default function MyPageScreen() {
 const MenuRow = ({ icon, title, onPress }: any) => (
   <TouchableOpacity style={styles.menuRow} onPress={onPress}>
     <View style={styles.menuRowContent}>
-      <Ionicons name={icon} size={24} color="#333" style={styles.menuIcon} />
+      <View style={styles.menuIcon}>
+        <Ionicons name={icon} size={20} color={Colors.primary} />
+      </View>
       <Text style={styles.menuText}>{title}</Text>
     </View>
-    <Ionicons name="chevron-forward" size={20} color="#ccc" />
+    <Ionicons name="chevron-forward" size={20} color={Colors.gray400} />
   </TouchableOpacity>
 );

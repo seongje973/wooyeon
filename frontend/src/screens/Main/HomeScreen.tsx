@@ -1,7 +1,10 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import PhotoScrim from '@/components/PhotoScrim';
+import Wordmark from '@/components/Wordmark';
 import { Colors } from '@/constants/Colors';
 import { Candidate, Match, matchingApi } from '@/api/matching';
 import { styles } from './HomeScreen.styles';
@@ -28,81 +31,90 @@ export default function HomeScreen() {
   );
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <View style={styles.header}>
-        <View>
-          <Text style={styles.greeting}>반가워요! 👋</Text>
-          <Text style={styles.title}>
-            오늘의 <Text style={styles.highlight}>우연</Text>을 만나보세요
-          </Text>
+    <SafeAreaView style={styles.container} edges={['top']}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.header}>
+          <Wordmark />
+          <TouchableOpacity style={styles.bellButton}>
+            <Ionicons name="notifications-outline" size={22} color={Colors.text} />
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.bellButton}>
-          <Ionicons name="notifications-outline" size={24} color="#333" />
-        </TouchableOpacity>
-      </View>
 
-      <ScrollView
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.cardList}
-      >
-        {candidates.map((c) => (
-          <ProfileCard key={c.userId} candidate={c} onPress={() => router.push('/match')} />
-        ))}
-        {candidates.length === 0 && (
-          <View style={[styles.card, styles.emptyCard]}>
-            <Text style={styles.emptyText}>지금은 새로운 추천이 없어요</Text>
-          </View>
-        )}
-      </ScrollView>
+        <Text style={styles.title}>오늘의 우연</Text>
+        <Text style={styles.greeting}>가까운 학교에서 찾은 사람들이에요</Text>
 
-      {matches.length > 0 && (
-        <>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>💌 새로운 인연</Text>
-            <TouchableOpacity onPress={() => router.push('/chat')}>
-              <Text style={styles.moreText}>더보기</Text>
-            </TouchableOpacity>
-          </View>
-          <View style={styles.boardContainer}>
-            {matches.slice(0, 3).map((m) => (
-              <TouchableOpacity
-                key={m.matchId}
-                style={styles.boardItem}
-                onPress={() =>
-                  router.push({
-                    pathname: '/chat/[id]',
-                    params: { id: m.matchId, name: m.user.nickname, userId: m.user.userId },
-                  })
-                }
-              >
-                <View>
-                  <Text style={styles.boardTitle}>
-                    {m.user.nickname} · {m.user.universityName}
-                  </Text>
-                  <Text style={styles.boardTime}>대화를 시작해 보세요</Text>
-                </View>
-                <Ionicons name="chatbubble-outline" size={18} color={Colors.primary} />
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.cardList}
+        >
+          {candidates.map((c) => (
+            <ProfileCard key={c.userId} candidate={c} onPress={() => router.push('/match')} />
+          ))}
+          {candidates.length === 0 && (
+            <View style={[styles.card, styles.emptyCard]}>
+              <Text style={styles.emptyText}>지금은 새로운 추천이 없어요</Text>
+            </View>
+          )}
+        </ScrollView>
+
+        {matches.length > 0 && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>새로운 인연</Text>
+              <TouchableOpacity onPress={() => router.push('/chat')}>
+                <Text style={styles.moreText}>더보기</Text>
               </TouchableOpacity>
-            ))}
-          </View>
-        </>
-      )}
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.matchList}
+            >
+              {matches.map((m) => (
+                <TouchableOpacity
+                  key={m.matchId}
+                  style={styles.matchItem}
+                  onPress={() =>
+                    router.push({
+                      pathname: '/chat/[id]',
+                      params: { id: m.matchId, name: m.user.nickname, userId: m.user.userId },
+                    })
+                  }
+                >
+                  <View style={styles.matchRing}>
+                    {m.user.photoUrl ? (
+                      <Image source={{ uri: m.user.photoUrl }} style={styles.matchAvatar} />
+                    ) : (
+                      <View style={styles.matchAvatar}>
+                        <Ionicons name="person" size={28} color={Colors.gray400} />
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.matchName} numberOfLines={1}>
+                    {m.user.nickname}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+          </>
+        )}
 
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>🔥 우리 학교 인기글</Text>
-        <TouchableOpacity>
-          <Text style={styles.moreText}>더보기</Text>
-        </TouchableOpacity>
-      </View>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>우리 학교 인기글</Text>
+          <TouchableOpacity>
+            <Text style={styles.moreText}>더보기</Text>
+          </TouchableOpacity>
+        </View>
 
-      <View style={styles.boardContainer}>
-        <BoardItem title="이번 축제 라인업 떴다 ㅋㅋ" time="10분 전" likes={52} />
-        <BoardItem title="도서관 자리 있나요?" time="30분 전" likes={12} />
-        <BoardItem title="학교 근처 맛집 추천좀요" time="1시간 전" likes={8} />
-      </View>
-      <View style={styles.footerSpace} />
-    </ScrollView>
+        <View style={styles.boardContainer}>
+          <BoardItem title="이번 축제 라인업 떴다 ㅋㅋ" time="10분 전" likes={52} />
+          <BoardItem title="도서관 자리 있나요?" time="30분 전" likes={12} />
+          <BoardItem title="학교 근처 맛집 추천좀요" time="1시간 전" likes={8} />
+        </View>
+        <View style={styles.footerSpace} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -116,12 +128,15 @@ const ProfileCard = ({ candidate, onPress }: { candidate: Candidate; onPress: ()
         <Ionicons name="person" size={40} color={Colors.gray400} />
       </View>
     )}
+    <PhotoScrim />
+    <Text style={styles.cardTag}>
+      {candidate.distanceKm === 0 ? '우리 학교' : `${candidate.distanceKm}km`}
+    </Text>
     <Text style={styles.cardName}>
       {candidate.nickname} {candidate.age}
     </Text>
-    <Text style={styles.cardMajor}>{candidate.universityName}</Text>
-    <Text style={styles.cardTag}>
-      {candidate.distanceKm === 0 ? '우리 학교' : `${candidate.distanceKm}km`}
+    <Text style={styles.cardMajor} numberOfLines={1}>
+      {candidate.universityName}
     </Text>
   </TouchableOpacity>
 );
@@ -133,7 +148,7 @@ const BoardItem = ({ title, time, likes }: any) => (
       <Text style={styles.boardTime}>{time}</Text>
     </View>
     <View style={styles.likeBox}>
-      <Ionicons name="heart-outline" size={14} color="#ff7f00" />
+      <Ionicons name="heart-outline" size={14} color={Colors.love} />
       <Text style={styles.likeCount}>{likes}</Text>
     </View>
   </TouchableOpacity>

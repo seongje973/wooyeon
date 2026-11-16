@@ -1,52 +1,90 @@
 import { StyleSheet, Dimensions } from 'react-native';
 import { Colors } from '@/constants/Colors';
+import { Radius, Shadow } from '@/constants/GlobalStyle';
 
 const { width } = Dimensions.get('window');
 
 export const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
+  container: { flex: 1, backgroundColor: Colors.background },
 
   // 헤더 영역
   header: {
-    padding: 20,
-    paddingTop: 60,
+    paddingHorizontal: 20,
+    paddingTop: 8,
+    paddingBottom: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  greeting: { fontSize: 16, color: '#666', marginBottom: 5 },
-  title: { fontSize: 24, fontWeight: 'bold', color: '#333' },
-  highlight: { color: '#ff7f00' },
-  bellButton: { padding: 10, backgroundColor: '#f5f5f5', borderRadius: 20 },
+  title: { paddingHorizontal: 20, fontSize: 24, fontWeight: '800', color: Colors.text },
+  greeting: {
+    paddingHorizontal: 20,
+    marginTop: 4,
+    marginBottom: 16,
+    fontSize: 14,
+    color: Colors.gray600,
+  },
+  bellButton: { padding: 10, backgroundColor: Colors.gray100, borderRadius: Radius.pill },
 
   // 카드 리스트 영역
-  cardList: { paddingHorizontal: 20, paddingBottom: 20 },
+  cardList: { paddingHorizontal: 20, paddingBottom: 20, gap: 12 },
   card: {
-    width: width * 0.4,
-    height: 200,
+    width: width * 0.42,
+    height: 240,
     borderRadius: 20,
-    padding: 15,
-    marginRight: 15,
+    padding: 14,
     justifyContent: 'flex-end',
   },
-  cardImagePlaceholder: { position: 'absolute', top: 20, left: 0, right: 0, alignItems: 'center' },
-  cardName: { fontSize: 18, fontWeight: 'bold', marginBottom: 5 },
-  cardMajor: { fontSize: 14, color: '#666', marginBottom: 5 },
-  cardTag: { fontSize: 12, color: '#ff7f00', fontWeight: 'bold' },
-  profileCard: { backgroundColor: Colors.gray100, overflow: 'hidden' },
-  cardPhoto: { ...StyleSheet.absoluteFillObject, opacity: 0.35 },
+  cardImagePlaceholder: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardName: { fontSize: 18, fontWeight: '800', color: Colors.white },
+  cardMajor: { marginTop: 2, fontSize: 13, color: Colors.white },
+  cardTag: {
+    position: 'absolute',
+    top: 12,
+    left: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: Radius.pill,
+    overflow: 'hidden',
+    backgroundColor: Colors.primary,
+    fontSize: 11,
+    fontWeight: '700',
+    color: Colors.white,
+  },
+  profileCard: { backgroundColor: Colors.gray200, overflow: 'hidden', ...Shadow.card },
+  cardPhoto: { ...StyleSheet.absoluteFillObject, width: '100%', height: '100%' },
   emptyCard: { backgroundColor: Colors.gray100, justifyContent: 'center', alignItems: 'center' },
   emptyText: { fontSize: 14, color: Colors.gray600, textAlign: 'center' },
 
+  // 새로운 인연
+  matchList: { paddingHorizontal: 20, gap: 14 },
+  matchItem: { alignItems: 'center', width: 72 },
+  matchRing: { padding: 3, borderRadius: Radius.pill, borderWidth: 2, borderColor: Colors.primary },
+  matchAvatar: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: Colors.gray100,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  matchName: { marginTop: 6, fontSize: 13, fontWeight: '600', color: Colors.text },
+
   // 게시판 영역
   sectionHeader: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingTop: 28,
+    paddingBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
   },
-  sectionTitle: { fontSize: 20, fontWeight: 'bold' },
-  moreText: { color: '#999' },
+  sectionTitle: { fontSize: 19, fontWeight: '800', color: Colors.text },
+  moreText: { fontSize: 13, color: Colors.gray600 },
 
   boardContainer: { paddingHorizontal: 20 },
   boardItem: {
@@ -55,19 +93,19 @@ export const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: 15,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    borderBottomColor: Colors.gray100,
   },
-  boardTitle: { fontSize: 16, marginBottom: 5 },
-  boardTime: { fontSize: 12, color: '#999' },
+  boardTitle: { fontSize: 16, marginBottom: 5, color: Colors.text },
+  boardTime: { fontSize: 12, color: Colors.gray600 },
   likeBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff0e6',
+    backgroundColor: Colors.primarySoft,
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 10,
+    borderRadius: Radius.pill,
   },
-  likeCount: { fontSize: 12, color: '#ff7f00', marginLeft: 4, fontWeight: 'bold' },
+  likeCount: { fontSize: 12, color: Colors.love, marginLeft: 4, fontWeight: 'bold' },
 
   // 여백
   footerSpace: { height: 100 },
