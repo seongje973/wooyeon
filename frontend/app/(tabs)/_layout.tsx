@@ -1,12 +1,22 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import Wordmark from '@/components/Wordmark';
+import { Colors } from '@/constants/Colors';
+import { Shadow } from '@/constants/GlobalStyle';
 
 export default function TabLayout() {
   return (
     <Tabs
       screenOptions={{
         headerShown: true,
-        tabBarActiveTintColor: '#826AED', // 선택됐을 때
+        headerShadowVisible: false,
+        headerTitleAlign: 'left',
+        headerTitleStyle: { fontSize: 22, fontWeight: '800', color: Colors.text },
+        headerStyle: { backgroundColor: Colors.background },
+        tabBarActiveTintColor: Colors.primary,
+        tabBarInactiveTintColor: Colors.gray400,
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarStyle: { borderTopWidth: 0, backgroundColor: Colors.white, ...Shadow.bar },
       }}
     >
       {/* 1. 메인 홈 */}
@@ -25,6 +35,7 @@ export default function TabLayout() {
         name="match"
         options={{
           title: '매칭',
+          headerTitle: () => <Wordmark />,
           tabBarIcon: ({ color, focused }) => (
             <Ionicons name={focused ? 'heart' : 'heart-outline'} size={24} color={color} />
           ),
