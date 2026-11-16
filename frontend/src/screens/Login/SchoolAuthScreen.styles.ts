@@ -26,6 +26,14 @@ export const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 24,
   },
+  schoolInfo: {
+    fontSize: 14,
+    color: Colors.primary,
+  },
+  schoolError: {
+    fontSize: 14,
+    color: Colors.error,
+  },
   footer: {
     padding: 24,
     alignItems: "center",
