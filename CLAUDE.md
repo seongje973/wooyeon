@@ -93,6 +93,7 @@
 - `tsconfig.json`의 `"ignoreDeprecations": "6.0"`은 설치된 TypeScript 5.9에서 TS5103 에러가 난다. 그래서 타입 검사는 위처럼 `--ignoreDeprecations 5.0`을 붙여 돌린다. `tsconfig.json`은 확인 없이 고치지 않는다.
 - `src/api/auth.ts`는 axios로 `https://api.wooyeon.com`(임시 주소, 이 레포에 서버 없음)을 부르고, 로그인은 Supabase를 쓴다. 서버 호출을 새로 만들 때는 어느 쪽으로 할지 먼저 묻는다.
 - 아직 테스트 러너가 없다. 테스트를 추가하려면 먼저 도구(예: jest-expo) 도입을 확인받는다.
+- `app/_layout.tsx`의 `isAuthenticated`는 `false`로 고정돼 있고 Supabase 세션과 연결돼 있지 않다. 로그인해도 탭 화면에 들어가면 로그인 화면으로 돌아간다. 로그인 후 동작을 확인할 때 이 점을 감안하고, 고치는 일은 따로 요청받아 한다.
 - `app.json`의 `scheme: "wooyeon"`은 소셜 로그인 리디렉션(`Linking.createURL('/')`)에 쓰인다. 바꾸면 Supabase에 등록된 리디렉션 URL도 같이 바꿔야 로그인이 된다.
 - `app.json`이 가리키는 `./assets/images/*` 파일이 레포에 없다. 빌드·아이콘 관련 작업 전에 이미지를 먼저 채워야 한다.
 - `.vscode/settings.json`이 저장할 때 import 정리·멤버 정렬을 한다. 내가 건드리지 않은 줄이 바뀌었으면 되돌린다.
@@ -108,7 +109,9 @@
 
 - 작업은 브랜치에서 하고 PR로 올린다. PR 하나는 한 가지 일만 하고, 한 번에 읽을 수 있는 크기로 만든다. 이유가 둘이면 PR을 나눈다.
 - PR은 직접 머지하지 않는다. 머지는 사용자가 한다. PR이 준비되면 준비됐다고 알린다.
-- PR 브랜치는 rebase·force push하지 않는다.
+- PR 브랜치는 rebase·force push하지 않는다 (봇이 PR 브랜치에 커밋을 올릴 수 있다).
+- CodeRabbit 리뷰 코멘트는 코드와 대조해 검증하고 맞는 것만 고친다. 반영하지 않은 코멘트에는 이유를 짧게 답한다.
+- 수정은 한 번에 모아 푸시하고, 자동 리뷰가 멈추면 `@coderabbitai review`로 다시 요청한다.
 - 충돌은 `main`을 브랜치에 merge해서 풀고, lockfile은 `main` 쪽을 받은 뒤 `npm install`로 다시 만든다.
 
 ## 이 문서 관리
