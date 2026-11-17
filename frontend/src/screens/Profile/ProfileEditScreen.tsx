@@ -19,6 +19,8 @@ export default function ProfileEditScreen() {
   const [photoPath, setPhotoPath] = useState<string | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [radiusKm, setRadiusKm] = useState(10);
+  // 이미 만든 프로필의 성별과 출생 연도는 서버가 바꾸지 못하게 한다.
+  const [isLocked, setIsLocked] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -33,6 +35,7 @@ export default function ProfileEditScreen() {
         setPhotoPath(p.photoPath);
         setPhotoUri(p.photoUrl);
         setRadiusKm(p.radiusKm);
+        setIsLocked(true);
       })
       .catch((err) => {
         // 처음 만드는 경우(404)는 빈 칸으로 시작한다.
@@ -94,14 +97,16 @@ export default function ProfileEditScreen() {
         onChangeText={setBirthYear}
         keyboardType="number-pad"
         maxLength={4}
+        editable={!isLocked}
       />
 
       <Text style={styles.label}>성별</Text>
       <View style={styles.chips}>
         {(['female', 'male'] as const).map((g) => (
-          <Chip key={g} label={g === 'female' ? '여성' : '남성'} selected={gender === g} onPress={() => setGender(g)} />
+          <Chip key={g} label={g === 'female' ? '여성' : '남성'} selected={gender === g} onPress={() => !isLocked && setGender(g)} />
         ))}
       </View>
+      {isLocked && <Text style={styles.lockNote}>성별과 출생 연도는 바꿀 수 없어요.</Text>}
 
       <Text style={styles.label}>만날 학교 범위</Text>
       <View style={styles.chips}>

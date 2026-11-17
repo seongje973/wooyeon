@@ -67,6 +67,11 @@ export const styles = StyleSheet.create({
     textAlignVertical: 'top',
     marginBottom: 24,
   },
+  lockNote: {
+    fontSize: 13,
+    color: Colors.gray600,
+    marginBottom: 12,
+  },
   message: {
     fontSize: 14,
     color: Colors.error,

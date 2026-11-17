@@ -88,6 +88,17 @@ export class ProfileService {
     if (verificationError) throw verificationError;
     if (!verification?.verified_at) throw new ForbiddenException('학교 인증을 먼저 해 주세요.');
 
+    // 성별은 후보와 파티 자리를 정하므로, 한 번 정하면 바꾸지 못한다. 출생 연도도 같이 묶는다.
+    const { data: existing, error: existingError } = await supabase
+      .from('profiles')
+      .select('gender, birth_year')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (existingError) throw existingError;
+    if (existing && (existing.gender !== input.gender || existing.birth_year !== input.birthYear)) {
+      throw new BadRequestException('성별과 출생 연도는 바꿀 수 없습니다.');
+    }
+
     const { data, error } = await supabase
       .from('profiles')
       .upsert({
