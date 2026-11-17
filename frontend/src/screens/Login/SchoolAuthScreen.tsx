@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -25,6 +25,16 @@ const SchoolAuthScreen = () => {
   const university = findUniversityByEmail(email);
   const isValidEmail = university !== undefined;
   const nearbyCount = university ? findNearbyUniversities(university, NEARBY_RADIUS_KM).length : 0;
+
+  // 인증은 마쳤지만 프로필을 만들기 전에 앱을 닫은 사람은 바로 프로필 만들기로 보낸다.
+  useEffect(() => {
+    authApi
+      .verificationStatus()
+      .then((status) => {
+        if (status.verified) router.replace('/profile-edit');
+      })
+      .catch(() => {});
+  }, [router]);
 
   const run = async (action: () => Promise<void>) => {
     setIsLoading(true);

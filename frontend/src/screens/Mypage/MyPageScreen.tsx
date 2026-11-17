@@ -84,11 +84,6 @@ export default function MyPageScreen() {
           title="프로필 수정"
           onPress={() => router.push('/profile-edit')}
         />
-        <MenuRow
-          icon="school-outline"
-          title="학교 인증하기"
-          onPress={() => router.push('/school-auth')}
-        />
         <MenuRow icon="settings-outline" title="설정" onPress={() => console.log('설정')} />
         <MenuRow
           icon="document-text-outline"

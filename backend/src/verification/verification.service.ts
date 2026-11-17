@@ -13,11 +13,24 @@ import { sendVerificationMail } from './mail.js';
 const CODE_TTL_MS = 10 * 60 * 1000;
 const RESEND_INTERVAL_MS = 60 * 1000;
 const MAX_ATTEMPTS = 5;
+// 다시 받을 때마다 시도 횟수가 0으로 돌아가므로, 하루 발송 횟수를 묶어 맞혀 보기와 메일 폭탄을 막는다.
+const MAX_SENDS_PER_DAY = 5;
+const SEND_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 const hashCode = (code: string) => createHash('sha256').update(code).digest();
 
 @Injectable()
 export class VerificationService {
+  async status(userId: string) {
+    const { data, error } = await supabase
+      .from('school_verifications')
+      .select('university_id, verified_at')
+      .eq('user_id', userId)
+      .maybeSingle();
+    if (error) throw error;
+    return data?.verified_at ? { verified: true, universityId: data.university_id } : { verified: false };
+  }
+
   async send(userId: string, rawEmail: string) {
     const email = rawEmail.trim().toLowerCase();
     const university = findUniversityByEmail(email);
@@ -35,15 +48,23 @@ export class VerificationService {
 
     const { data: current, error: currentError } = await supabase
       .from('school_verifications')
-      .select('sent_at')
+      .select('sent_at, verified_at, send_count, send_window_at')
       .eq('user_id', userId)
       .maybeSingle();
     if (currentError) throw currentError;
+    // 인증을 마친 행을 새 인증번호로 덮어쓰면 인증이 풀리고, 그 이메일을 다른 계정이 다시 쓸 수 있게 된다.
+    if (current?.verified_at) throw new ConflictException('이미 학교 인증을 마쳤습니다.');
     const tooSoon = new HttpException('잠시 후 다시 시도해 주세요.', HttpStatus.TOO_MANY_REQUESTS);
     if (current && Date.now() - new Date(current.sent_at).getTime() < RESEND_INTERVAL_MS) throw tooSoon;
 
-    const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
     const now = new Date();
+    const inWindow =
+      current?.send_window_at && now.getTime() - new Date(current.send_window_at).getTime() < SEND_WINDOW_MS;
+    if (inWindow && current.send_count >= MAX_SENDS_PER_DAY) {
+      throw new HttpException('오늘은 더 받을 수 없습니다. 내일 다시 시도해 주세요.', HttpStatus.TOO_MANY_REQUESTS);
+    }
+
+    const code = randomInt(0, 1_000_000).toString().padStart(6, '0');
     const challenge = {
       email,
       university_id: university.id,
@@ -51,7 +72,8 @@ export class VerificationService {
       attempts: 0,
       sent_at: now.toISOString(),
       expires_at: new Date(now.getTime() + CODE_TTL_MS).toISOString(),
-      verified_at: null,
+      send_count: inWindow ? current.send_count + 1 : 1,
+      send_window_at: inWindow ? current.send_window_at : now.toISOString(),
     };
     // 동시에 들어온 요청 중 하나만 새 인증번호를 만든다. 첫 요청은 primary key로,
     // 다시 받기는 앞에서 읽은 sent_at이 그대로일 때만 바꾸는 것으로 가린다.
@@ -65,6 +87,7 @@ export class VerificationService {
         .update(challenge)
         .eq('user_id', userId)
         .eq('sent_at', current.sent_at)
+        .is('verified_at', null)
         .select('user_id');
       if (error) throw error;
       if (!updated?.length) throw tooSoon;
