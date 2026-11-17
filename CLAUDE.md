@@ -98,7 +98,7 @@
 - 서버는 `SUPABASE_URL`·`SUPABASE_SERVICE_ROLE_KEY`가 없으면 바로 멈춘다. `RESEND_API_KEY`가 없으면 개발 중에는 인증번호를 서버 콘솔에 찍고, `NODE_ENV=production`에서는 발송이 실패한다.
 - 아직 테스트 러너가 없다. 테스트를 추가하려면 먼저 도구(예: jest-expo) 도입을 확인받는다.
 - 로그인 여부는 `app/_layout.tsx`가 Supabase 세션으로 정한다. 실제 로그인 없이 웹에서 로그인 후 화면을 보려면, `EXPO_PUBLIC_SUPABASE_URL=https://dummy.supabase.co`로 띄우고 `localStorage`의 `sb-dummy-auth-token`(키는 `sb-<URL 호스트 첫 부분>-auth-token`)에 만료 전 `expires_at`을 가진 가짜 세션 JSON을 넣은 뒤 새로고침한다.
-- `app.json`의 `scheme: "wooyeon"`은 소셜 로그인 리디렉션(`Linking.createURL('/')`)에 쓰인다. 바꾸면 Supabase에 등록된 리디렉션 URL도 같이 바꿔야 로그인이 된다.
+- `app.json`의 `scheme: "wooyeon"`은 소셜 로그인 리디렉션(`makeRedirectUri({ scheme: 'wooyeon' })`)에 쓰인다. 바꾸면 Supabase에 등록된 리디렉션 URL도 같이 바꿔야 로그인이 된다.
 - `app.json`이 가리키는 `./assets/images/*` 파일이 레포에 없다. 빌드·아이콘 관련 작업 전에 이미지를 먼저 채워야 한다.
 - `.vscode/settings.json`이 저장할 때 import 정리·멤버 정렬을 한다. 내가 건드리지 않은 줄이 바뀌었으면 되돌린다.
 - 패키지 매니저는 npm만 쓴다 (`package-lock.json` 기준, yarn·pnpm 금지).
