@@ -38,8 +38,8 @@ node --env-file=.env dist/main.js
 - `POST /safety/blocks` `{ userId }` → 차단. 서로 후보·매칭·채팅에서 보이지 않는다. 다시 차단해도 그대로 성공.
 - `POST /safety/reports` `{ userId, reason }` → 신고 기록(1~500자). 신고한 사람이 탈퇴해도 남는다.
 - `DELETE /account` → 탈퇴. 프로필 사진 파일을 지우고 Supabase 사용자를 지운다. 나머지 기록은 `on delete cascade`로 같이 지워진다.
-- `GET /parties` → 내 만날 범위 안 학교에서 열리는, 아직 지나지 않은 파티를 가까운 시간 순으로 최대 50개. 차단한 사람이 연 파티는 빠진다.
+- `GET /parties` → 내 만날 범위 안 학교에서 열리는, 아직 지나지 않은 파티를 가까운 시간 순으로 최대 50개. 차단한 사람이 열었거나 들어가 있는 파티는 빠진다(내가 이미 들어간 파티는 남는다).
 - `POST /parties` `{ title, description?, place, meetAt, size: 2|3|4 }` → 파티를 열고 연 사람이 먼저 참여한다. `size`는 성별마다 받는 인원이다.
 - `GET /parties/:partyId` → 파티와 참여자 목록
-- `POST /parties/:partyId/members` → 참여. 내 성별 자리가 찼거나 이미 참여했으면 409. 동시에 참여해도 `006_parties.sql`의 트리거가 인원을 지킨다.
+- `POST /parties/:partyId/members` → 참여. 내 만날 범위 밖 학교의 파티는 404. 내 성별 자리가 찼거나 이미 참여했으면 409. 동시에 참여해도 `006_parties.sql`의 트리거가 인원을 지킨다.
 - `DELETE /parties/:partyId/members/me` → 나가기. 연 사람이 나가면 파티가 닫힌다.
