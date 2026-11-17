@@ -1,8 +1,8 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { supabase } from '../supabase.js';
+import { PHOTO_BUCKET, removePhotos } from './photos.js';
 
 export const RADIUS_OPTIONS = [5, 10, 20];
-const PHOTO_BUCKET = 'profile-photos';
 
 export interface ProfileInput {
   nickname: string;
@@ -53,7 +53,7 @@ export const parseProfileInput = (userId: string, body: Record<string, unknown>)
   if (bio !== undefined && (typeof bio !== 'string' || bio.length > 300)) {
     throw new BadRequestException('소개는 300자 이하여야 합니다.');
   }
-  if (photoPath !== undefined && photoPath !== null && (typeof photoPath !== 'string' || !photoPath.startsWith(`${userId}/`))) {
+  if (photoPath !== undefined && photoPath !== null && (typeof photoPath !== 'string' || !photoPath.startsWith(`${userId}/`) || !/^[\w.-]+$/.test(photoPath.slice(userId.length + 1)))) {
     throw new BadRequestException('사진 경로가 올바르지 않습니다.');
   }
   if (typeof radiusKm !== 'number' || !RADIUS_OPTIONS.includes(radiusKm)) {
@@ -104,6 +104,8 @@ export class ProfileService {
       .select('*')
       .single();
     if (error) throw error;
+    // 공개 버킷이라 바꾸기 전 사진도 주소를 알면 계속 보인다. 지금 쓰는 사진만 남긴다.
+    await removePhotos(userId, input.photoPath);
     return toProfileResponse(data);
   }
 }

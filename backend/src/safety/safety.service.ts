@@ -1,7 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { supabase } from '../supabase.js';
-
-const PHOTO_BUCKET = 'profile-photos';
+import { removePhotos } from '../profile/photos.js';
 
 @Injectable()
 export class SafetyService {
@@ -25,14 +24,7 @@ export class SafetyService {
 
   async deleteAccount(userId: string) {
     // 테이블 행은 auth.users의 on delete cascade로 지워지지만, Storage 파일은 따로 지운다.
-    const { data: files, error: listError } = await supabase.storage.from(PHOTO_BUCKET).list(userId);
-    if (listError) throw listError;
-    if (files?.length) {
-      const { error: removeError } = await supabase.storage
-        .from(PHOTO_BUCKET)
-        .remove(files.map((f) => `${userId}/${f.name}`));
-      if (removeError) throw removeError;
-    }
+    await removePhotos(userId);
     const { error } = await supabase.auth.admin.deleteUser(userId);
     if (error) throw error;
     return { deleted: true };
