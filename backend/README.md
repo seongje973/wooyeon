@@ -29,7 +29,7 @@ node --env-file=.env dist/main.js
 - `GET /profile/me` → 내 프로필. 없으면 404.
 - `PUT /profile/me` `{ nickname, birthYear, gender: "male"|"female", bio?, photoPath?, radiusKm: 5|10|20 }` → 저장한 프로필. 전체를 바꾸는 요청이라 빠진 `bio`·`photoPath`는 비워진다. 학교 인증 전이면 403. 학교는 인증한 이메일에서 정해진다. `photoPath`는 앱이 Storage `profile-photos` 버킷의 `<user_id>/` 아래에 올린 파일 경로다.
 - `GET /matching/candidates` → 내 반경(내 학교 기준) 안 학교의 이성 중, 아직 고르지 않은 사람 최대 20명을 가까운 순으로. 프로필이 없으면 404.
-- `POST /matching/swipes` `{ targetUserId, liked: true|false }` → `{ matched: false }` 또는 서로 좋아요면 `{ matched: true, matchId }`. 같은 상대를 다시 고르면 409.
+- `POST /matching/swipes` `{ targetUserId, liked: true|false }` → `{ matched: false }` 또는 서로 좋아요면 `{ matched: true, matchId }`. 후보 조건(이성, 내 반경 안 학교)에 맞지 않는 상대는 404, 같은 상대를 다시 고르면 409.
 - `GET /matching/matches` → 내 매칭 목록과 상대 요약, 최근 순.
 - `DELETE /matching/matches/:matchId` → 매칭 취소. 대화도 함께 지워지고, 서로 다시 후보로 나오지 않는다.
 - `GET /chats` → 내 채팅방(매칭) 목록과 마지막 메시지
