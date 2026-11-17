@@ -5,7 +5,7 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from "react-native";
-import { Colors } from "../constants/Colors";
+import { Colors } from "@/constants/Colors";
 
 interface Props {
   title: string;
