@@ -95,7 +95,15 @@ export class PartyService {
     };
   }
 
-  // 내 만날 범위 안 학교에서 열리는, 아직 지나지 않은 파티. 차단한 사람이 연 파티는 빼고 가까운 시간 순.
+  // 차단한 사람(또는 나를 차단한 사람)이 들어 있는 파티는 보이지 않는다.
+  // 내가 이미 들어간 파티는 나갈 수 있어야 하므로 남기고, 참여자 목록에서 그 사람만 뺀다.
+  private hiddenFrom(party: PartyRow, members: MemberRow[], userId: string, blocked: Set<string>) {
+    const mine = members.filter((m) => m.party_id === party.id);
+    if (mine.some((m) => m.user_id === userId)) return false;
+    return blocked.has(party.host) || mine.some((m) => blocked.has(m.user_id));
+  }
+
+  // 내 만날 범위 안 학교에서 열리는, 아직 지나지 않은 파티. 차단한 사람이 있는 파티는 빼고 가까운 시간 순.
   async list(userId: string) {
     const me = await this.myProfile(userId);
     const home = universityOf(me.university_id);
@@ -111,9 +119,11 @@ export class PartyService {
       .limit(50);
     if (error) throw error;
     const blocked = await blockedUserIds(userId);
-    const parties = ((data ?? []) as PartyRow[]).filter((p) => !blocked.has(p.host));
-    const members = await this.members(parties.map((p) => p.id));
-    return parties.map((p) => this.summary(p, members, userId, home));
+    const all = (data ?? []) as PartyRow[];
+    const members = await this.members(all.map((p) => p.id));
+    return all
+      .filter((p) => !this.hiddenFrom(p, members, userId, blocked))
+      .map((p) => this.summary(p, members, userId, home));
   }
 
   async create(userId: string, input: PartyInput) {
@@ -135,7 +145,11 @@ export class PartyService {
     const { error: joinError } = await supabase
       .from('party_members')
       .insert({ party_id: data.id, user_id: userId, gender: me.gender });
-    if (joinError) throw joinError;
+    if (joinError) {
+      // 연 사람이 없는 파티가 남지 않게 되돌린다.
+      await supabase.from('parties').delete().eq('id', data.id);
+      throw joinError;
+    }
     return this.detail(userId, data.id);
   }
 
@@ -143,15 +157,18 @@ export class PartyService {
     const { data: party, error } = await supabase.from('parties').select(PARTY_COLUMNS).eq('id', partyId).maybeSingle();
     if (error) throw error;
     const blocked = await blockedUserIds(userId);
-    if (!party || blocked.has(party.host)) throw new NotFoundException('파티를 찾을 수 없습니다.');
+    if (!party) throw new NotFoundException('파티를 찾을 수 없습니다.');
     const members = await this.members([partyId]);
+    if (this.hiddenFrom(party as PartyRow, members, userId, blocked)) {
+      throw new NotFoundException('파티를 찾을 수 없습니다.');
+    }
 
     const { data: profiles, error: profileError } = await supabase
       .from('profiles')
       .select('user_id, nickname, birth_year, photo_path, university_id')
       .in(
         'user_id',
-        members.map((m) => m.user_id),
+        members.filter((m) => !blocked.has(m.user_id)).map((m) => m.user_id),
       );
     if (profileError) throw profileError;
     const me = await this.myProfile(userId);
@@ -174,6 +191,7 @@ export class PartyService {
     const me = await this.myProfile(userId);
     const party = await this.detail(userId, partyId);
     if (party.joined) throw new ConflictException('이미 참여한 파티입니다.');
+    if (party.distanceKm > me.radius_km) throw new NotFoundException('파티를 찾을 수 없습니다.');
     if (new Date(party.meetAt).getTime() <= Date.now()) throw new BadRequestException('이미 지난 파티입니다.');
     const taken = me.gender === 'male' ? party.maleCount : party.femaleCount;
     if (taken >= party.size) throw new ConflictException('자리가 모두 찼습니다.');
