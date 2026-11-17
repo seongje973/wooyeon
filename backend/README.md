@@ -24,7 +24,8 @@ node --env-file=.env dist/main.js
 
 모두 `Authorization: Bearer <Supabase access token>`이 필요하다.
 
-- `POST /verification/school-email/send` `{ "email": "me@snu.ac.kr" }` → `{ "universityId": "snu" }`. 지원하지 않는 학교 400, 다른 계정이 이미 인증한 이메일 409, 60초 안에 다시 요청 429.
+- `GET /verification/school-email` → `{ "verified": true, "universityId": "snu" }` 또는 `{ "verified": false }`.
+- `POST /verification/school-email/send` `{ "email": "me@snu.ac.kr" }` → `{ "universityId": "snu" }`. 지원하지 않는 학교 400, 다른 계정이 이미 인증한 이메일이거나 내가 이미 인증을 마쳤으면 409, 60초 안에 다시 요청하거나 24시간에 5번을 넘기면 429.
 - `POST /verification/school-email/verify` `{ "code": "123456" }` → `{ "universityId", "email" }`. 틀린 번호·만료 400, 5번 넘게 틀림 429.
 - `GET /profile/me` → 내 프로필. 없으면 404.
 - `PUT /profile/me` `{ nickname, birthYear, gender: "male"|"female", bio?, photoPath?, radiusKm: 5|10|20 }` → 저장한 프로필. 전체를 바꾸는 요청이라 빠진 `bio`·`photoPath`는 비워진다. 학교 인증 전이면 403. 학교는 인증한 이메일에서 정해진다. `photoPath`는 앱이 Storage `profile-photos` 버킷의 `<user_id>/` 아래에 올린 파일 경로다.

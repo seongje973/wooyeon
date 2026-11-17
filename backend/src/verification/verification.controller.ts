@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, HttpCode, Post, Req, UseGuards } from '@nestjs/common';
 import { AuthGuard, type AuthedRequest } from '../auth.guard.js';
 import { VerificationService } from './verification.service.js';
 
@@ -6,6 +6,11 @@ import { VerificationService } from './verification.service.js';
 @UseGuards(AuthGuard)
 export class VerificationController {
   constructor(private readonly service: VerificationService) {}
+
+  @Get()
+  status(@Req() req: AuthedRequest) {
+    return this.service.status(req.userId);
+  }
 
   @Post('send')
   @HttpCode(200)
