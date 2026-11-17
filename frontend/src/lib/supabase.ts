@@ -1,7 +1,7 @@
 import 'react-native-url-polyfill/auto';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createClient } from '@supabase/supabase-js';
-import { Platform } from 'react-native'; //  Platform 추가
+import { AppState, Platform } from 'react-native'; //  Platform 추가
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -26,7 +26,7 @@ const ExpoStorage = {
       localStorage.setItem(key, value);
       return;
     }
-    AsyncStorage.setItem(key, value);
+    return AsyncStorage.setItem(key, value);
   },
   removeItem: (key: string) => {
     if (Platform.OS === 'web') {
@@ -34,7 +34,7 @@ const ExpoStorage = {
       localStorage.removeItem(key);
       return;
     }
-    AsyncStorage.removeItem(key);
+    return AsyncStorage.removeItem(key);
   },
 };
 
@@ -46,3 +46,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
   },
 });
+
+// 앱에서는 화면에 떠 있을 때만 토큰을 갱신한다. 백그라운드에서는 타이머가 멈춰 갱신이 어긋난다.
+if (Platform.OS !== 'web') {
+  AppState.addEventListener('change', (state) => {
+    if (state === 'active') supabase.auth.startAutoRefresh();
+    else supabase.auth.stopAutoRefresh();
+  });
+}

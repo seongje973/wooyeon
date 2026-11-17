@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, Alert } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
 import SocialButton from '@/components/SocialButton';
@@ -29,9 +29,11 @@ const extractParamsFromUrl = (url: string) => {
 };
 
 const LoginScreen = () => {
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleSocialLogin = async (type: 'kakao' | 'google') => {
     console.log(`${type} 로그인 시도...`);
+    setErrorMessage('');
 
     try {
       // 1. 리다이렉트 URI 설정 (scheme을 명시하여 wooyeon:// 스키마 보장)
@@ -59,8 +61,6 @@ const LoginScreen = () => {
 
         // 4. 결과 처리
         if (result.type === 'success' && result.url) {
-          console.log('브라우저 인증 성공, 결과 URL:', result.url);
-          
           // 5. URL로부터 토큰 추출
           const params = extractParamsFromUrl(result.url);
           const { access_token, refresh_token } = params;
@@ -84,7 +84,7 @@ const LoginScreen = () => {
       }
     } catch (err) {
       console.error('로그인 에러:', err);
-      Alert.alert('로그인 오류', (err as Error).message);
+      setErrorMessage(`로그인하지 못했어요. ${(err as Error).message}`);
     }
   };
   return (
@@ -101,6 +101,7 @@ const LoginScreen = () => {
       </View>
 
       <View style={styles.footer}>
+        {errorMessage !== '' && <Text style={styles.error}>{errorMessage}</Text>}
         <SocialButton type="kakao" onPress={() => handleSocialLogin('kakao')} />
         <SocialButton type="google" onPress={() => handleSocialLogin('google')} />
       </View>
@@ -120,6 +121,7 @@ const styles = StyleSheet.create({
   },
   subtitle: { fontSize: 16, color: Colors.gray600, lineHeight: 24 },
   footer: { padding: 24, paddingBottom: 60 },
+  error: { fontSize: 14, color: Colors.error, marginBottom: 12 },
 });
 
 export default LoginScreen;
