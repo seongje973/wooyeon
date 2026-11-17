@@ -18,6 +18,7 @@ node --env-file=.env dist/main.js
 
 - `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`: 필수. service_role 키는 서버에만 둔다.
 - `RESEND_API_KEY`, `MAIL_FROM`: 인증 메일 발송용(Resend). 키가 없으면 개발 중에는 인증번호를 콘솔에 찍는다.
+- `CORS_ORIGIN`: 웹 앱 주소(쉼표로 구분). 비우면 모든 출처를 받는다. 운영에서는 채운다.
 - `PORT`: 기본 3000.
 
 ## API
@@ -33,10 +34,10 @@ node --env-file=.env dist/main.js
 - `GET /matching/matches` → 내 매칭 목록과 상대 요약, 최근 순.
 - `DELETE /matching/matches/:matchId` → 매칭 취소. 대화도 함께 지워지고, 서로 다시 후보로 나오지 않는다.
 - `GET /chats` → 내 채팅방(매칭) 목록과 마지막 메시지
-- `GET /chats/:matchId/messages?after=<createdAt>` → 메시지를 오래된 순으로 최대 100개. `after`를 주면 그 뒤 것만. 매칭 당사자가 아니면 403.
-- `POST /chats/:matchId/messages` `{ body }` → 보낸 메시지. 1~1000자.
-- `POST /safety/blocks` `{ userId }` → 차단. 서로 후보·매칭·채팅에서 보이지 않는다. 다시 차단해도 그대로 성공.
-- `POST /safety/reports` `{ userId, reason }` → 신고 기록(1~500자). 신고한 사람이 탈퇴해도 남는다.
+- `GET /chats/:matchId/messages?after=<createdAt>` → 메시지를 오래된 순으로 최대 100개. `after`가 없으면 가장 최근 100개, 있으면 그 뒤 것부터 100개. 매칭 당사자가 아니면 403.
+- `POST /chats/:matchId/messages` `{ body }` → 보낸 메시지. 1~1000자. 1분에 30개를 넘기면 429.
+- `POST /safety/blocks` `{ userId }` → 차단. 서로 후보·매칭·채팅에서 보이지 않는다. 다시 차단해도 그대로 성공. 없는 사용자는 404.
+- `POST /safety/reports` `{ userId, reason }` → 신고 기록(1~500자). 신고한 사람이 탈퇴해도 남는다. 없는 사용자는 404, 24시간에 20건을 넘기면 429.
 - `DELETE /account` → 탈퇴. 프로필 사진 파일을 지우고 Supabase 사용자를 지운다. 나머지 기록은 `on delete cascade`로 같이 지워진다.
 - `GET /parties` → 내 만날 범위 안 학교에서 열리는, 아직 지나지 않은 파티를 가까운 시간 순으로 최대 50개. 차단한 사람이 연 파티는 빠진다.
 - `POST /parties` `{ title, description?, place, meetAt, size: 2|3|4 }` → 파티를 열고 연 사람이 먼저 참여한다. `size`는 성별마다 받는 인원이다.

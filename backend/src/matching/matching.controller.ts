@@ -12,6 +12,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { AuthGuard, type AuthedRequest } from '../auth.guard.js';
+import { isUuid } from '../uuid.js';
 import { MatchingService } from './matching.service.js';
 
 @Controller('matching')
@@ -27,7 +28,7 @@ export class MatchingController {
   @Post('swipes')
   @HttpCode(200)
   swipe(@Req() req: AuthedRequest, @Body() body: { targetUserId?: unknown; liked?: unknown }) {
-    if (typeof body?.targetUserId !== 'string' || typeof body?.liked !== 'boolean') {
+    if (!isUuid(body?.targetUserId) || typeof body?.liked !== 'boolean') {
       throw new BadRequestException('targetUserId와 liked가 필요합니다.');
     }
     return this.service.swipe(req.userId, body.targetUserId, body.liked);
