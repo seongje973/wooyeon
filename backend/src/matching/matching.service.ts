@@ -6,6 +6,15 @@ import { blockedUserIds } from '../safety/blocks.js';
 
 const CANDIDATE_LIMIT = 20;
 
+interface CandidateRow {
+  user_id: string;
+  nickname: string;
+  birth_year: number;
+  bio: string;
+  photo_path: string | null;
+  university_id: string;
+}
+
 const ageOf = (birthYear: number) => new Date().getFullYear() - birthYear;
 const universityOf = (id: string) => Universities.find((u) => u.id === id);
 
@@ -31,49 +40,52 @@ export class MatchingService {
     if (!home) throw new NotFoundException('학교 정보를 찾을 수 없습니다.');
 
     const nearby = new Map(
-      Universities.map((u) => [u.id, distanceKm(home, u)] as const).filter(([, d]) => d <= me.radius_km),
+      Universities.map((u) => [u.id, distanceKm(home, u)] as const)
+        .filter(([, d]) => d <= me.radius_km)
+        .sort(([, a], [, b]) => a - b),
     );
 
-    const { data: swiped, error: swipedError } = await supabase
-      .from('likes')
-      .select('to_user')
-      .eq('from_user', userId);
-    if (swipedError) throw swipedError;
-    const blocked = await blockedUserIds(userId);
-    const excluded = [userId, ...(swiped ?? []).map((s) => s.to_user), ...blocked];
-
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('user_id, nickname, birth_year, bio, photo_path, university_id')
-      .in('university_id', [...nearby.keys()])
-      .neq('gender', me.gender)
-      .not('user_id', 'in', `(${excluded.join(',')})`);
+    // 이미 고른 사람·차단한 사람을 빼는 일은 DB 함수가 한다 (009_matching_candidates.sql).
+    // 그 목록을 요청 주소에 실으면 많이 고른 사용자는 주소 길이 한도를 넘는다.
+    const { data, error } = await supabase.rpc('matching_candidates', {
+      p_user: userId,
+      p_gender: me.gender,
+      p_universities: [...nearby.keys()],
+      p_limit: CANDIDATE_LIMIT,
+    });
     if (error) throw error;
 
-    return (data ?? [])
-      .map((p) => ({
-        userId: p.user_id,
-        nickname: p.nickname,
-        age: ageOf(p.birth_year),
-        bio: p.bio,
-        photoUrl: photoUrl(p.photo_path),
-        universityName: universityOf(p.university_id)?.name ?? '',
-        distanceKm: Math.round((nearby.get(p.university_id) ?? 0) * 10) / 10,
-      }))
-      .sort((a, b) => a.distanceKm - b.distanceKm)
-      .slice(0, CANDIDATE_LIMIT);
+    return ((data ?? []) as CandidateRow[]).map((p) => ({
+      userId: p.user_id,
+      nickname: p.nickname,
+      age: ageOf(p.birth_year),
+      bio: p.bio,
+      photoUrl: photoUrl(p.photo_path),
+      universityName: universityOf(p.university_id)?.name ?? '',
+      distanceKm: Math.round((nearby.get(p.university_id) ?? 0) * 10) / 10,
+    }));
   }
 
   async swipe(userId: string, targetUserId: string, liked: boolean) {
     if (targetUserId === userId) throw new BadRequestException('자기 자신은 고를 수 없습니다.');
-    await this.myProfile(userId);
+    const me = await this.myProfile(userId);
     const { data: target, error: targetError } = await supabase
       .from('profiles')
-      .select('user_id')
+      .select('user_id, gender, university_id')
       .eq('user_id', targetUserId)
       .maybeSingle();
     if (targetError) throw targetError;
-    if (!target || (await blockedUserIds(userId)).has(targetUserId)) {
+    // 후보로 나올 수 있는 사람만 고를 수 있다 (candidates와 같은 조건).
+    const home = universityOf(me.university_id);
+    const school = target && universityOf(target.university_id);
+    if (
+      !target ||
+      !home ||
+      !school ||
+      target.gender === me.gender ||
+      distanceKm(home, school) > me.radius_km ||
+      (await blockedUserIds(userId)).has(targetUserId)
+    ) {
       throw new NotFoundException('상대를 찾을 수 없습니다.');
     }
 
