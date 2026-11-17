@@ -1,1 +1,1 @@
-export { default } from '../../src/screens/Party/PartyScreen';
+export { default } from '@/screens/Party/PartyScreen';

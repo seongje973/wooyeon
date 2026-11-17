@@ -1,1 +1,1 @@
-export { default } from '../../src/screens/Match/MatchScreen';
+export { default } from '@/screens/Match/MatchScreen';
