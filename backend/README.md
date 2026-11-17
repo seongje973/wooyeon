@@ -27,7 +27,7 @@ node --env-file=.env dist/main.js
 - `POST /verification/school-email/send` `{ "email": "me@snu.ac.kr" }` → `{ "universityId": "snu" }`. 지원하지 않는 학교 400, 다른 계정이 이미 인증한 이메일 409, 60초 안에 다시 요청 429.
 - `POST /verification/school-email/verify` `{ "code": "123456" }` → `{ "universityId", "email" }`. 틀린 번호·만료 400, 5번 넘게 틀림 429.
 - `GET /profile/me` → 내 프로필. 없으면 404.
-- `PUT /profile/me` `{ nickname, birthYear, gender: "male"|"female", bio?, photoPath?, radiusKm: 5|10|20 }` → 저장한 프로필. 전체를 바꾸는 요청이라 빠진 `bio`·`photoPath`는 비워진다. 학교 인증 전이면 403. 학교는 인증한 이메일에서 정해진다. `photoPath`는 앱이 Storage `profile-photos` 버킷의 `<user_id>/` 아래에 올린 파일 경로다(5MB 이하 JPEG·PNG·WebP). 저장하면 그 폴더의 다른 사진은 지운다.
+- `PUT /profile/me` `{ nickname, birthYear, gender: "male"|"female", bio?, photoPath?, radiusKm: 5|10|20 }` → 저장한 프로필. 전체를 바꾸는 요청이라 빠진 `bio`·`photoPath`는 비워진다. 학교 인증 전이면 403. 이미 프로필이 있으면 `gender`·`birthYear`는 바꿀 수 없다(400). 학교는 인증한 이메일에서 정해진다. `photoPath`는 앱이 Storage `profile-photos` 버킷의 `<user_id>/` 아래에 올린 파일 경로다(5MB 이하 JPEG·PNG·WebP). 저장하면 그 폴더의 다른 사진은 지운다.
 - `GET /matching/candidates` → 내 반경(내 학교 기준) 안 학교의 이성 중, 아직 고르지 않은 사람 최대 20명을 가까운 순으로. 프로필이 없으면 404.
 - `POST /matching/swipes` `{ targetUserId, liked: true|false }` → `{ matched: false }` 또는 서로 좋아요면 `{ matched: true, matchId }`. 같은 상대를 다시 고르면 409.
 - `GET /matching/matches` → 내 매칭 목록과 상대 요약, 최근 순.
